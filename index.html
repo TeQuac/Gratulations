@@ -50,6 +50,10 @@
             <input type="text" id="personName" maxlength="80" required />
           </label>
           <label>
+            Spitzname (optional)
+            <input type="text" id="nickname" maxlength="40" placeholder="z. B. Alex" />
+          </label>
+          <label>
             Beziehung
             <input type="text" id="relationship" maxlength="80" placeholder="z. B. Schwester, Teamkollege" required />
           </label>
@@ -73,6 +77,20 @@
               <option value="locker und humorvoll">Locker und humorvoll</option>
               <option value="respektvoll und formell">Respektvoll und formell</option>
               <option value="kurz und direkt">Kurz und direkt</option>
+            </select>
+          </label>
+          <label>
+            Smileys verwenden
+            <select id="emojiPreference" required>
+              <option value="ja">Ja</option>
+              <option value="nein">Nein</option>
+            </select>
+          </label>
+          <label>
+            Bist du ein Vielschreiber?
+            <select id="writerType" required>
+              <option value="ja">Ja, ich schreibe gerne viel</option>
+              <option value="nein">Nein, lieber kurz</option>
             </select>
           </label>
           <div class="form-actions">

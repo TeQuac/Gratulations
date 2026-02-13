@@ -24,10 +24,13 @@ const closeDayModalBtn = document.getElementById("closeDayModalBtn");
 
 const birthDateInput = document.getElementById("birthDate");
 const personNameInput = document.getElementById("personName");
+const nicknameInput = document.getElementById("nickname");
 const relationshipInput = document.getElementById("relationship");
 const bondStrengthInput = document.getElementById("bondStrength");
 const descriptionInput = document.getElementById("description");
 const communicationStyleInput = document.getElementById("communicationStyle");
+const emojiPreferenceInput = document.getElementById("emojiPreference");
+const writerTypeInput = document.getElementById("writerType");
 const saveEntryBtn = document.getElementById("saveEntryBtn");
 const clearFormBtn = document.getElementById("clearFormBtn");
 
@@ -192,9 +195,14 @@ function renderEntriesList() {
   items.forEach((entry) => {
     const card = document.createElement("article");
     card.className = "entry-item";
+    const displayName = entry.nickname || entry.personName;
+    const emojiInfo = entry.emojiPreference === "ja" ? "mit Smileys" : "ohne Smileys";
+    const writerInfo = entry.writerType === "ja" ? "Vielschreiber" : "Kurzschreiber";
     card.innerHTML = `<strong>${entry.personName}</strong>
+      <small>Anrede: ${displayName}</small>
       <small>${entry.relationship} • ${entry.bondStrength}</small>
       <small>Stil: ${entry.communicationStyle}</small>
+      <small>${emojiInfo} • ${writerInfo}</small>
       <small>${entry.description}</small>`;
 
     const actions = document.createElement("div");
@@ -225,10 +233,13 @@ function populateForm(entry) {
   state.editId = entry.id;
   birthDateInput.value = entry.birthDate;
   personNameInput.value = entry.personName;
+  nicknameInput.value = entry.nickname || "";
   relationshipInput.value = entry.relationship;
   bondStrengthInput.value = entry.bondStrength;
   descriptionInput.value = entry.description;
   communicationStyleInput.value = entry.communicationStyle;
+  emojiPreferenceInput.value = entry.emojiPreference || "ja";
+  writerTypeInput.value = entry.writerType || "ja";
 }
 
 function saveEntry() {
@@ -240,10 +251,13 @@ function saveEntry() {
     id: state.editId ?? crypto.randomUUID(),
     birthDate: birthDateInput.value,
     personName: personNameInput.value.trim(),
+    nickname: nicknameInput.value.trim(),
     relationship: relationshipInput.value.trim(),
     bondStrength: bondStrengthInput.value,
     description: descriptionInput.value.trim(),
     communicationStyle: communicationStyleInput.value,
+    emojiPreference: emojiPreferenceInput.value,
+    writerType: writerTypeInput.value,
   };
 
   if (state.editId) {
@@ -273,11 +287,12 @@ function openWishModal(entry) {
 }
 
 function generateWish(entry) {
+  const salutationName = entry.nickname || entry.personName;
   const introMap = {
-    "herzlich und emotional": `Mein lieber ${entry.personName}, heute denke ich mit ganz viel Wärme an dich`,
-    "locker und humorvoll": `Hey ${entry.personName}, heute wird gefeiert – ganz klar dein Tag`,
-    "respektvoll und formell": `Liebe/r ${entry.personName}, zu Ihrem heutigen Geburtstag übermittle ich Ihnen meine besten Wünsche`,
-    "kurz und direkt": `${entry.personName}, alles Gute zum Geburtstag`,
+    "herzlich und emotional": `Mein lieber ${salutationName}, heute denke ich mit ganz viel Wärme an dich`,
+    "locker und humorvoll": `Hey ${salutationName}, heute wird gefeiert – ganz klar dein Tag`,
+    "respektvoll und formell": `Liebe/r ${salutationName}, zu Ihrem heutigen Geburtstag übermittle ich Ihnen meine besten Wünsche`,
+    "kurz und direkt": `${salutationName}, alles Gute zum Geburtstag`,
   };
 
   const closenessLine = {
@@ -288,12 +303,17 @@ function generateWish(entry) {
   };
 
   const signalWordHints = buildSignalHints(entry.description);
+  const bodyLine =
+    entry.writerType === "nein"
+      ? "Hab einen großartigen Tag und lass dich feiern."
+      : "Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.";
+  const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
 
-  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${entry.personName}`}.
+  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.
 ${signalWordHints}
 ${closenessLine[entry.bondStrength]}
-Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.
-Liebe Grüße!`;
+${bodyLine}
+Liebe Grüße${emojiSuffix}!`;
 }
 
 function buildSignalHints(description) {
@@ -329,10 +349,13 @@ async function copyWish() {
 function resetForm() {
   state.editId = null;
   personNameInput.value = "";
+  nicknameInput.value = "";
   relationshipInput.value = "";
   descriptionInput.value = "";
   bondStrengthInput.value = "sehr eng";
   communicationStyleInput.value = "herzlich und emotional";
+  emojiPreferenceInput.value = "ja";
+  writerTypeInput.value = "ja";
   birthDateInput.value = state.selectedDate || toISO(new Date());
 }
 
