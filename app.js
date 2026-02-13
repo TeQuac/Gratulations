@@ -20,6 +20,7 @@ const nextBtn = document.getElementById("nextBtn");
 const dayModal = document.getElementById("dayModal");
 const modalDateTitle = document.getElementById("modalDateTitle");
 const entriesList = document.getElementById("entriesList");
+const closeDayModalBtn = document.getElementById("closeDayModalBtn");
 
 const birthDateInput = document.getElementById("birthDate");
 const personNameInput = document.getElementById("personName");
@@ -33,6 +34,7 @@ const clearFormBtn = document.getElementById("clearFormBtn");
 const wishModal = document.getElementById("wishModal");
 const wishText = document.getElementById("wishText");
 const copyWishBtn = document.getElementById("copyWishBtn");
+const closeWishModalBtn = document.getElementById("closeWishModalBtn");
 
 init();
 
@@ -52,6 +54,8 @@ function init() {
   saveEntryBtn.addEventListener("click", saveEntry);
   clearFormBtn.addEventListener("click", resetForm);
   copyWishBtn.addEventListener("click", copyWish);
+  closeDayModalBtn.addEventListener("click", () => dayModal.close());
+  closeWishModalBtn.addEventListener("click", () => wishModal.close());
 
   attachSwipeNavigation();
   disableLongPressSelection();
@@ -269,25 +273,47 @@ function openWishModal(entry) {
 }
 
 function generateWish(entry) {
-  const toneMap = {
-    "herzlich und emotional": `Mein lieber ${entry.personName}, ich wollte dir heute unbedingt schreiben`,
-    "locker und humorvoll": `Hey ${entry.personName}, heute ist dein Ehrentag`,
-    "respektvoll und formell": `Liebe/r ${entry.personName}, zu Ihrem heutigen Geburtstag gratuliere ich Ihnen herzlich`,
-    "kurz und direkt": `${entry.personName}, alles Gute zum Geburtstag!`,
+  const introMap = {
+    "herzlich und emotional": `Mein lieber ${entry.personName}, heute denke ich mit ganz viel Wärme an dich`,
+    "locker und humorvoll": `Hey ${entry.personName}, heute wird gefeiert – ganz klar dein Tag`,
+    "respektvoll und formell": `Liebe/r ${entry.personName}, zu Ihrem heutigen Geburtstag übermittle ich Ihnen meine besten Wünsche`,
+    "kurz und direkt": `${entry.personName}, alles Gute zum Geburtstag`,
   };
 
   const closenessLine = {
-    "sehr eng": "Du bist ein fester und wichtiger Teil meines Lebens.",
-    eng: "Ich schätze unsere Nähe und unsere gemeinsamen Momente sehr.",
-    mittel: "Unsere Verbindung bedeutet mir viel und ich freue mich über jeden Austausch.",
-    locker: "Ich freue mich immer, von dir zu hören und wünsche dir nur das Beste.",
+    "sehr eng": "Du bist ein fester und besonders wichtiger Teil meines Lebens.",
+    eng: "Unsere Verbindung ist mir sehr wichtig und ich schätze sie jeden Tag.",
+    mittel: "Unsere Verbindung bedeutet mir viel und ich freue mich über unsere Gespräche.",
+    locker: "Ich denke gerne an unsere Begegnungen und wünsche dir nur das Beste.",
   };
 
-  return `${toneMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${entry.personName}!`}.
-Als ${entry.relationship} erlebe ich dich als ${entry.description}.
+  const signalWordHints = buildSignalHints(entry.description);
+
+  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${entry.personName}`}.
+${signalWordHints}
 ${closenessLine[entry.bondStrength]}
-Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr voller schöner Erlebnisse.
+Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.
 Liebe Grüße!`;
+}
+
+function buildSignalHints(description) {
+  const text = (description || "").toLowerCase();
+  const signalMap = [
+    { keys: ["humor", "lustig", "lachen", "witz"], phrase: "Dein Humor bringt Leichtigkeit und gute Stimmung in jeden Moment." },
+    { keys: ["kreativ", "idee", "kunst", "musik"], phrase: "Deine kreative Art und deine Ideen inspirieren mich immer wieder." },
+    { keys: ["hilfsbereit", "zuverlässig", "ehrlich", "treu"], phrase: "Deine verlässliche und hilfsbereite Art ist etwas ganz Besonderes." },
+    { keys: ["stark", "mutig", "kämpfer", "durchhalte"], phrase: "Deine Stärke und dein Mut beeindrucken mich sehr." },
+    { keys: ["ruhig", "gelassen", "entspannt"], phrase: "Deine ruhige Art tut unglaublich gut und gibt Sicherheit." },
+    { keys: ["herzlich", "warm", "lieb", "empath"], phrase: "Deine herzliche Ausstrahlung macht Begegnungen mit dir besonders wertvoll." },
+  ];
+
+  const matched = signalMap.filter((item) => item.keys.some((key) => text.includes(key))).map((item) => item.phrase);
+
+  if (!matched.length) {
+    return "Ich schätze an dir besonders deine Art, wie du mit Menschen umgehst und positive Impulse setzt.";
+  }
+
+  return matched.slice(0, 2).join(" ");
 }
 
 async function copyWish() {
