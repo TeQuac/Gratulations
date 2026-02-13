@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Geburtstagskalender</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell" id="appShell">
+      <header class="app-header">
+        <h1>Geburtstagskalender</h1>
+        <div class="view-toggle" role="tablist" aria-label="Kalenderansicht">
+          <button id="monthViewBtn" class="toggle-btn active" role="tab" aria-selected="true">Monat</button>
+          <button id="weekViewBtn" class="toggle-btn" role="tab" aria-selected="false">Woche</button>
+        </div>
+      </header>
+
+      <section class="calendar-panel">
+        <div class="calendar-nav">
+          <button id="prevBtn" aria-label="Zurück">◀</button>
+          <h2 id="calendarTitle"></h2>
+          <button id="nextBtn" aria-label="Weiter">▶</button>
+        </div>
+        <div class="weekday-row" id="weekdayRow"></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </section>
+    </div>
+
+    <dialog id="dayModal" class="modal">
+      <form method="dialog" class="modal-card" id="dayFormContainer">
+        <div class="modal-head">
+          <h3 id="modalDateTitle"></h3>
+          <button value="cancel" class="icon-btn" type="submit">✕</button>
+        </div>
+
+        <div id="entriesList" class="entries-list"></div>
+
+        <fieldset class="entry-form" id="entryEditor">
+          <legend>Geburtstag hinzufügen / bearbeiten</legend>
+          <label>
+            Datum
+            <input type="date" id="birthDate" required />
+          </label>
+          <label>
+            Name
+            <input type="text" id="personName" maxlength="80" required />
+          </label>
+          <label>
+            Beziehung
+            <input type="text" id="relationship" maxlength="80" placeholder="z. B. Schwester, Teamkollege" required />
+          </label>
+          <label>
+            Stärke der Bindung
+            <select id="bondStrength" required>
+              <option value="sehr eng">Sehr eng</option>
+              <option value="eng">Eng</option>
+              <option value="mittel">Mittel</option>
+              <option value="locker">Locker</option>
+            </select>
+          </label>
+          <label>
+            Kurzbeschreibung
+            <textarea id="description" rows="2" maxlength="180" required></textarea>
+          </label>
+          <label>
+            Kommunikationsstil
+            <select id="communicationStyle" required>
+              <option value="herzlich und emotional">Herzlich und emotional</option>
+              <option value="locker und humorvoll">Locker und humorvoll</option>
+              <option value="respektvoll und formell">Respektvoll und formell</option>
+              <option value="kurz und direkt">Kurz und direkt</option>
+            </select>
+          </label>
+          <div class="form-actions">
+            <button type="button" id="saveEntryBtn">Speichern</button>
+            <button type="button" id="clearFormBtn" class="secondary">Zurücksetzen</button>
+          </div>
+        </fieldset>
+      </form>
+    </dialog>
+
+    <dialog id="wishModal" class="modal">
+      <form method="dialog" class="modal-card">
+        <div class="modal-head">
+          <h3>Personalisierter Glückwunsch</h3>
+          <button value="cancel" class="icon-btn" type="submit">✕</button>
+        </div>
+        <p id="wishText" class="wish-text"></p>
+        <div class="form-actions">
+          <button type="button" id="copyWishBtn">Text kopieren</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
