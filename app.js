@@ -376,48 +376,152 @@ function openWishModal(entry) {
 
 function generateWish(entry) {
   const salutationName = entry.nickname || entry.personName;
+  const isFormal = entry.communicationStyle === "respektvoll und formell";
+  const isShortWriter = entry.writerType === "nein";
+  const descriptionSignals = analyzeDescriptionSignals(entry.description);
+  const variationSeed = `${entry.id}-${entry.birthDate}-${currentLocalDateKey(new Date())}`;
+
   const introMap = {
-    "herzlich und emotional": `Mein lieber ${salutationName}, heute denke ich mit ganz viel Wärme an dich`,
-    "locker und humorvoll": `Hey ${salutationName}, heute wird gefeiert – ganz klar dein Tag`,
-    "respektvoll und formell": `Liebe/r ${salutationName}, zu Ihrem heutigen Geburtstag übermittle ich Ihnen meine besten Wünsche`,
-    "kurz und direkt": `${salutationName}, alles Gute zum Geburtstag`,
+    "herzlich und emotional": [
+      `Liebe/r ${salutationName}, heute ist ein besonderer Tag für dich`,
+      `Mein/e liebe/r ${salutationName}, heute denke ich mit großer Freude an dich`,
+    ],
+    "locker und humorvoll": [
+      `Hey ${salutationName}, heute gehört die Bühne ganz dir`,
+      `Hi ${salutationName}, heute wird gefeiert – und zwar ordentlich`,
+    ],
+    "respektvoll und formell": [
+      `Sehr geehrte/r ${salutationName}, zu Ihrem Geburtstag übermittle ich Ihnen meine herzlichen Glückwünsche`,
+      `Liebe/r ${salutationName}, zu Ihrem heutigen Geburtstag wünsche ich Ihnen von Herzen alles Gute`,
+    ],
+    "kurz und direkt": [`${salutationName}, alles Gute zum Geburtstag`, `Happy Birthday, ${salutationName}`],
+  };
+
+  const coreWishMap = {
+    informal: [
+      "Ich wünsche dir Gesundheit, Freude und viele schöne Momente im neuen Lebensjahr.",
+      "Für dein neues Lebensjahr wünsche ich dir Glück, Energie und ganz viel Grund zum Lächeln.",
+    ],
+    formal: [
+      "Ich wünsche Ihnen Gesundheit, Freude und ein erfülltes neues Lebensjahr.",
+      "Für Ihr neues Lebensjahr wünsche ich Ihnen Glück, Erfolg und viele schöne Augenblicke.",
+    ],
   };
 
   const closenessLine = {
-    "sehr eng": "Du bist ein fester und besonders wichtiger Teil meines Lebens.",
-    eng: "Unsere Verbindung ist mir sehr wichtig und ich schätze sie jeden Tag.",
-    mittel: "Unsere Verbindung bedeutet mir viel und ich freue mich über unsere Gespräche.",
-    locker: "Ich denke gerne an unsere Begegnungen und wünsche dir nur das Beste.",
+    informal: {
+      "sehr eng": ["Du bist ein besonders wichtiger Mensch in meinem Leben."],
+      eng: ["Unsere Verbindung bedeutet mir sehr viel."],
+      mittel: ["Ich schätze unsere Gespräche und die gemeinsame Zeit sehr."],
+      locker: ["Ich denke gerne an unsere Begegnungen zurück."],
+    },
+    formal: {
+      "sehr eng": ["Unsere enge Verbindung bedeutet mir sehr viel."],
+      eng: ["Unsere Verbindung schätze ich sehr."],
+      mittel: ["Ich schätze den Austausch mit Ihnen sehr."],
+      locker: ["Ich wünsche Ihnen weiterhin alles Gute."],
+    },
   };
 
-  const signalWordHints = buildSignalHints(entry.description);
-  const bodyLine =
-    entry.writerType === "nein"
-      ? "Hab einen großartigen Tag und lass dich feiern."
-      : "Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.";
+  const introLine = pickVariant(introMap[entry.communicationStyle] || introMap["kurz und direkt"], `${variationSeed}-intro`);
+  const coreLine = pickVariant(
+    isFormal ? coreWishMap.formal : coreWishMap.informal,
+    `${variationSeed}-core-${descriptionSignals.vibe}`,
+  );
+  const relationshipLine = pickVariant(
+    (isFormal ? closenessLine.formal : closenessLine.informal)[entry.bondStrength] ||
+      (isFormal ? closenessLine.formal : closenessLine.informal).mittel,
+    `${variationSeed}-bond`,
+  );
+  const styleAccent = buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed });
+  const shortLine = isFormal ? "Genießen Sie Ihren besonderen Tag." : "Genieß deinen Tag in vollen Zügen.";
   const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
 
-  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.\n${signalWordHints}\n${closenessLine[entry.bondStrength]}\n${bodyLine}\nLiebe Grüße${emojiSuffix}!`;
-}
+  const textLines = [introLine.endsWith(".") ? introLine : `${introLine}.`, coreLine];
 
-function buildSignalHints(description) {
-  const text = (description || "").toLowerCase();
-  const signalMap = [
-    { keys: ["humor", "lustig", "lachen", "witz"], phrase: "Dein Humor bringt Leichtigkeit und gute Stimmung in jeden Moment." },
-    { keys: ["kreativ", "idee", "kunst", "musik"], phrase: "Deine kreative Art und deine Ideen inspirieren mich immer wieder." },
-    { keys: ["hilfsbereit", "zuverlässig", "ehrlich", "treu"], phrase: "Deine verlässliche und hilfsbereite Art ist etwas ganz Besonderes." },
-    { keys: ["stark", "mutig", "kämpfer", "durchhalte"], phrase: "Deine Stärke und dein Mut beeindrucken mich sehr." },
-    { keys: ["ruhig", "gelassen", "entspannt"], phrase: "Deine ruhige Art tut unglaublich gut und gibt Sicherheit." },
-    { keys: ["herzlich", "warm", "lieb", "empath"], phrase: "Deine herzliche Ausstrahlung macht Begegnungen mit dir besonders wertvoll." },
-  ];
-
-  const matched = signalMap.filter((item) => item.keys.some((key) => text.includes(key))).map((item) => item.phrase);
-
-  if (!matched.length) {
-    return "Ich schätze an dir besonders deine Art, wie du mit Menschen umgehst und positive Impulse setzt.";
+  if (isShortWriter) {
+    textLines.push(shortLine);
+  } else {
+    textLines.push(relationshipLine);
+    if (styleAccent) {
+      textLines.push(styleAccent);
+    }
   }
 
-  return matched.slice(0, 2).join(" ");
+  textLines.push(isFormal ? `Mit besten Grüßen${emojiSuffix}!` : `Liebe Grüße${emojiSuffix}!`);
+  return textLines.join("\n");
+}
+
+function analyzeDescriptionSignals(description) {
+  const text = (description || "").toLowerCase();
+  const signalMap = [
+    { keys: ["humor", "lustig", "lachen", "witz"], trait: "humorvoll", vibe: "locker" },
+    { keys: ["kreativ", "idee", "kunst", "musik"], trait: "kreativ", vibe: "lebendig" },
+    { keys: ["hilfsbereit", "zuverlässig", "ehrlich", "treu"], trait: "verlässlich", vibe: "warm" },
+    { keys: ["stark", "mutig", "kämpfer", "durchhalte"], trait: "stark", vibe: "wertschätzend" },
+    { keys: ["ruhig", "gelassen", "entspannt"], trait: "ruhig", vibe: "ruhig" },
+    { keys: ["herzlich", "warm", "lieb", "empath"], trait: "herzlich", vibe: "nah" },
+  ];
+
+  const matches = signalMap.filter((item) => item.keys.some((key) => text.includes(key)));
+  const traits = matches.map((item) => item.trait);
+  const vibe = matches[0]?.vibe || "neutral";
+
+  return { traits, vibe };
+}
+
+function buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed }) {
+  if (isShortWriter || !descriptionSignals.traits.length) {
+    return "";
+  }
+
+  const accentMap = {
+    humorvoll: {
+      informal: ["Mit dir wird es einfach nie langweilig."],
+      formal: ["Ihr Humor sorgt stets für eine angenehme Atmosphäre."],
+    },
+    kreativ: {
+      informal: ["Deine Ideen bringen immer frischen Wind hinein."],
+      formal: ["Ihre Kreativität beeindruckt mich immer wieder."],
+    },
+    verlässlich: {
+      informal: ["Auf dich ist immer Verlass, und das ist etwas Besonderes."],
+      formal: ["Ihre verlässliche Art schätze ich sehr."],
+    },
+    stark: {
+      informal: ["Deine Stärke motiviert mich immer wieder."],
+      formal: ["Ihre Stärke verdient großen Respekt."],
+    },
+    ruhig: {
+      informal: ["Deine ruhige Art tut richtig gut."],
+      formal: ["Ihre ruhige Art wirkt sehr wohltuend."],
+    },
+    herzlich: {
+      informal: ["Deine herzliche Art macht jeden Moment schöner."],
+      formal: ["Ihre herzliche Art macht den Austausch besonders angenehm."],
+    },
+  };
+
+  const trait = descriptionSignals.traits[0];
+  const options = accentMap[trait]?.[isFormal ? "formal" : "informal"] || [];
+  return pickVariant(options, `${variationSeed}-accent-${trait}`);
+}
+
+function pickVariant(options, seedText) {
+  if (!options?.length) {
+    return "";
+  }
+
+  return options[Math.abs(hashString(seedText)) % options.length];
+}
+
+function hashString(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash << 5) - hash + text.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
 }
 
 async function copyWish() {
