@@ -1,5 +1,6 @@
 const STORAGE_KEY = "birthday-entries-v1";
 const NOTIFY_PREF_KEY = "birthday-notify-enabled-v1";
+const NOTIFY_TIME_KEY = "birthday-notify-time-v1";
 const LAST_NOTIFY_KEY = "birthday-last-notified-v1";
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const state = {
@@ -48,6 +49,7 @@ const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const closeWishModalBtn = document.getElementById("closeWishModalBtn");
 const notificationStatus = document.getElementById("notificationStatus");
 const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
+const notificationTimeInput = document.getElementById("notificationTimeInput");
 const dailyWishModal = document.getElementById("dailyWishModal");
 const closeDailyWishModalBtn = document.getElementById("closeDailyWishModalBtn");
 const dailyWishList = document.getElementById("dailyWishList");
@@ -72,17 +74,47 @@ function init() {
   closeWishModalBtn.addEventListener("click", () => wishModal.close());
   closeDailyWishModalBtn.addEventListener("click", () => dailyWishModal.close());
   enableNotificationsBtn.addEventListener("click", enableBirthdayNotifications);
+  notificationTimeInput.addEventListener("change", handleNotificationTimeChange);
   attachSwipeNavigation();
   disableLongPressSelection();
   render();
   hydrateNotificationState();
 }
 function hydrateNotificationState() {
+  hydrateNotificationTime();
   updateNotificationStatus();
   if (isNotificationEnabled()) {
     scheduleReminderCheck();
     maybeSendDailyBirthdayNotifications();
   }
+}
+function hydrateNotificationTime() {
+  if (!notificationTimeInput) return;
+  const saved = localStorage.getItem(NOTIFY_TIME_KEY);
+  if (isValidTimeValue(saved)) {
+    notificationTimeInput.value = saved;
+  }
+}
+function handleNotificationTimeChange() {
+  if (!notificationTimeInput) return;
+  const value = notificationTimeInput.value;
+  if (!isValidTimeValue(value)) return;
+  localStorage.setItem(NOTIFY_TIME_KEY, value);
+  updateNotificationStatus();
+  if (isNotificationEnabled()) {
+    scheduleReminderCheck();
+    maybeSendDailyBirthdayNotifications();
+  }
+}
+function notificationTriggerTime() {
+  const fallback = "08:00";
+  const selected = (notificationTimeInput && notificationTimeInput.value) || localStorage.getItem(NOTIFY_TIME_KEY) || fallback;
+  const timeValue = isValidTimeValue(selected) ? selected : fallback;
+  const [hours, minutes] = timeValue.split(":").map((value) => Number.parseInt(value, 10));
+  return { hours, minutes, label: timeValue };
+}
+function isValidTimeValue(value) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value || "");
 }
 function setViewMode(mode) {
   state.viewMode = mode;
@@ -622,6 +654,7 @@ async function enableBirthdayNotifications() {
     return;
   }
   localStorage.setItem(NOTIFY_PREF_KEY, "enabled");
+  localStorage.setItem(NOTIFY_TIME_KEY, notificationTriggerTime().label);
   updateNotificationStatus();
   maybeSendDailyBirthdayNotifications();
   scheduleReminderCheck();
@@ -635,12 +668,16 @@ function updateNotificationStatus() {
     enableNotificationsBtn.disabled = true;
     return;
   }
+  const trigger = notificationTriggerTime();
   enableNotificationsBtn.disabled = Notification.permission === "granted" && isNotificationEnabled();
+  if (notificationTimeInput) {
+    notificationTimeInput.disabled = false;
+  }
   if (isNotificationEnabled()) {
     notificationStatus.textContent =
-      "Aktiv: Geburtstags-Erinnerungen werden täglich um 07:00 UTC ausgelöst (solange die App geöffnet oder als aktive PWA im Hintergrund läuft).";
+      `Aktiv: Geburtstags-Erinnerungen werden täglich um ${trigger.label} (lokale Zeit) ausgelöst, solange die App geöffnet oder als aktive PWA im Hintergrund läuft.`;
   } else {
-    notificationStatus.textContent = "Benachrichtigungen für Geburtstage sind deaktiviert.";
+    notificationStatus.textContent = `Benachrichtigungen sind deaktiviert. Gewählte Erinnerungszeit: ${trigger.label} (lokale Zeit).`;
   }
 }
 function scheduleReminderCheck() {
@@ -649,10 +686,11 @@ function scheduleReminderCheck() {
     clearTimeout(state.reminderTimer);
   }
   const now = new Date();
+  const trigger = notificationTriggerTime();
   const nextTrigger = new Date(now);
-  nextTrigger.setUTCHours(7, 0, 0, 0);
+  nextTrigger.setHours(trigger.hours, trigger.minutes, 0, 0);
   if (now >= nextTrigger) {
-    nextTrigger.setUTCDate(nextTrigger.getUTCDate() + 1);
+    nextTrigger.setDate(nextTrigger.getDate() + 1);
   }
   const delay = Math.max(nextTrigger.getTime() - now.getTime(), 500);
   state.reminderTimer = setTimeout(() => {
@@ -663,37 +701,36 @@ function scheduleReminderCheck() {
 function maybeSendDailyBirthdayNotifications() {
   if (!isNotificationEnabled()) return;
   const now = new Date();
-  const alreadySentToday = localStorage.getItem(LAST_NOTIFY_KEY) === currentUtcDateKey(now);
-  const afterTrigger = now.getUTCHours() > 7 || (now.getUTCHours() === 7 && now.getUTCMinutes() >= 0);
+  const trigger = notificationTriggerTime();
+  const todayKey = currentLocalDateKey(now);
+  const alreadySentToday = localStorage.getItem(LAST_NOTIFY_KEY) === todayKey;
+  const afterTrigger = now.getHours() > trigger.hours || (now.getHours() === trigger.hours && now.getMinutes() >= trigger.minutes);
   if (alreadySentToday || !afterTrigger) return;
-  const todaysEntries = entriesForTodayUTC(now);
+  const todaysEntries = entriesForTodayLocal(now);
   if (!todaysEntries.length) {
-    localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
+    localStorage.setItem(LAST_NOTIFY_KEY, todayKey);
     return;
   }
   state.dailyWishPayloads = todaysEntries.map((entry) => ({ entry, wish: generateWish(entry) }));
   showDailyNotifications(state.dailyWishPayloads);
   renderDailyWishList();
   dailyWishModal.showModal();
-  localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
+  localStorage.setItem(LAST_NOTIFY_KEY, todayKey);
 }
-function entriesForTodayUTC(now) {
-  const utcMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const utcDay = String(now.getUTCDate()).padStart(2, "0");
+function entriesForTodayLocal(now) {
+  const localMonth = String(now.getMonth() + 1).padStart(2, "0");
+  const localDay = String(now.getDate()).padStart(2, "0");
   return state.entries.filter((entry) => {
     const [, month, day] = entry.birthDate.split("-");
-    return month === utcMonth && day === utcDay;
+    return month === localMonth && day === localDay;
   });
-}
-function currentUtcDateKey(now) {
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
 }
 function showDailyNotifications(payloads) {
   payloads.forEach(({ entry, wish }) => {
     const shortWish = wish.replace(/\s+/g, " ").slice(0, 120);
     const notice = new Notification(`🎂 ${entry.personName} hat heute Geburtstag`, {
       body: `${shortWish}${wish.length > 120 ? "…" : ""}`,
-      tag: `birthday-${entry.id}-${currentUtcDateKey(new Date())}`,
+      tag: `birthday-${entry.id}-${currentLocalDateKey(new Date())}`,
       renotify: false,
     });
     notice.onclick = () => {

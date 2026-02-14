@@ -22,7 +22,11 @@
       <section class="calendar-panel">
         <div class="notification-banner" id="notificationBanner">
           <p id="notificationStatus">Benachrichtigungen für Geburtstage sind deaktiviert.</p>
-          <button type="button" id="enableNotificationsBtn">07:00Z Benachrichtigungen aktivieren</button>
+          <label class="notify-time-label" for="notificationTimeInput">
+            Erinnerungszeit
+            <input type="time" id="notificationTimeInput" value="08:00" />
+          </label>
+          <button type="button" id="enableNotificationsBtn">Benachrichtigungen aktivieren</button>
         </div>
         <div class="calendar-nav">
           <button id="prevBtn" aria-label="Zurück">◀</button>
