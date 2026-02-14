@@ -434,7 +434,13 @@ function resetForm() {
 }
 
 function entriesForDate(isoDate) {
-  return state.entries.filter((entry) => entry.birthDate === isoDate);
+  const selectedMonthDay = monthDayKey(isoDate);
+  return state.entries.filter((entry) => monthDayKey(entry.birthDate) === selectedMonthDay);
+}
+
+function monthDayKey(isoDate) {
+  const [, month, day] = isoDate.split("-");
+  return `${month}-${day}`;
 }
 
 function persistEntries() {
