@@ -279,6 +279,7 @@ h1 {
 .entry-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .entry-actions .copy-style-btn {
