@@ -64,31 +64,45 @@
           <label>
             Beziehung
             <select id="relationship" required>
-              <option value="Mutter">Mutter</option>
-              <option value="Vater">Vater</option>
-              <option value="Tochter">Tochter</option>
-              <option value="Sohn">Sohn</option>
-              <option value="Schwester">Schwester</option>
-              <option value="Bruder">Bruder</option>
-              <option value="Oma">Oma</option>
-              <option value="Opa">Opa</option>
-              <option value="Tante">Tante</option>
-              <option value="Onkel">Onkel</option>
-              <option value="Cousine">Cousine</option>
-              <option value="Cousin">Cousin</option>
-              <option value="Enkelin">Enkelin</option>
-              <option value="Enkel">Enkel</option>
-              <option value="Entfernter Verwandter">Entfernter Verwandter</option>
-              <option value="Guter Freund">Guter Freund</option>
-              <option value="Sehr guter Freund">Sehr guter Freund</option>
-              <option value="Bester Freund">Bester Freund</option>
-              <option value="Entfernter Bekannter">Entfernter Bekannter</option>
-              <option value="Guter Bekannter">Guter Bekannter</option>
-              <option value="Arbeitskollege">Arbeitskollege</option>
-              <option value="Chef">Chef</option>
-              <option value="Sportsfreund">Sportsfreund</option>
-              <option value="Nachbar">Nachbar</option>
-              <option value="Vereinskollege">Vereinskollege</option>
+              <optgroup label="Familie">
+                <option value="Mutter">Mutter</option>
+                <option value="Vater">Vater</option>
+                <option value="Tochter">Tochter</option>
+                <option value="Sohn">Sohn</option>
+                <option value="Schwester">Schwester</option>
+                <option value="Bruder">Bruder</option>
+                <option value="Oma">Oma</option>
+                <option value="Opa">Opa</option>
+                <option value="Tante">Tante</option>
+                <option value="Onkel">Onkel</option>
+                <option value="Cousine">Cousine</option>
+                <option value="Cousin">Cousin</option>
+                <option value="Nichte">Nichte</option>
+                <option value="Neffe">Neffe</option>
+                <option value="Enkelin">Enkelin</option>
+                <option value="Enkel">Enkel</option>
+                <option value="Schwiegermutter">Schwiegermutter</option>
+                <option value="Schwiegervater">Schwiegervater</option>
+                <option value="Schwägerin">Schwägerin</option>
+                <option value="Schwager">Schwager</option>
+                <option value="Entfernter Verwandter">Entfernter Verwandter</option>
+              </optgroup>
+              <optgroup label="Freundschaft">
+                <option value="Guter Freund">Guter Freund</option>
+                <option value="Sehr guter Freund">Sehr guter Freund</option>
+                <option value="Bester Freund">Bester Freund</option>
+                <option value="Sportsfreund">Sportsfreund</option>
+                <option value="Vereinskollege">Vereinskollege</option>
+              </optgroup>
+              <optgroup label="Bekanntschaft">
+                <option value="Entfernter Bekannter">Entfernter Bekannter</option>
+                <option value="Guter Bekannter">Guter Bekannter</option>
+                <option value="Nachbar">Nachbar</option>
+              </optgroup>
+              <optgroup label="Beruf">
+                <option value="Arbeitskollege">Arbeitskollege</option>
+                <option value="Chef">Chef</option>
+              </optgroup>
             </select>
           </label>
           <label>
@@ -168,7 +182,7 @@
         <p id="wishText" class="wish-text"></p>
         <div class="form-actions">
           <button type="button" id="copyWishBtn">Text kopieren</button>
-          <button type="button" id="sendMailBtn" class="secondary icon-only" aria-label="Per E-Mail senden" title="Per E-Mail senden">✉️</button>
+          <button type="button" id="sendMailBtn" class="secondary icon-only" aria-label="Per E-Mail senden" title="Per E-Mail senden"><span class="mail-icon" aria-hidden="true"></span></button>
           <button type="button" id="sendWhatsAppBtn" class="secondary icon-only" aria-label="Per WhatsApp senden" title="Per WhatsApp senden"><span class="whatsapp-icon" aria-hidden="true"></span></button>
         </div>
       </form>
@@ -178,16 +192,6 @@
       <form method="dialog" class="modal-card">
         <div class="modal-head">
           <h3>Automatische Geburtstagsgrüße heute</h3>
-          <button id="closeDailyWishModalBtn" class="icon-btn" type="button" aria-label="Fenster schließen">✕</button>
-        </div>
-        <div id="dailyWishList" class="entries-list"></div>
-      </form>
-    </dialog>
-
-    <dialog id="dailyWishModal" class="modal">
-      <form method="dialog" class="modal-card">
-        <div class="modal-head">
-          <h3>Automatische Geburtstagsgrüße heute (07:00Z)</h3>
           <button id="closeDailyWishModalBtn" class="icon-btn" type="button" aria-label="Fenster schließen">✕</button>
         </div>
         <div id="dailyWishList" class="entries-list"></div>
