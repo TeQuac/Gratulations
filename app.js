@@ -292,18 +292,7 @@ function renderEntriesList() {
   items.forEach((entry) => {
     const card = document.createElement("article");
     card.className = "entry-item";
-    const displayName = entry.nickname || entry.personName;
-    const emojiInfo = entry.emojiPreference === "ja" ? "mit Smileys" : "ohne Smileys";
-    const writerInfo = entry.writerType === "ja" ? "Vielschreiber" : "Kurzschreiber";
-    card.innerHTML = `<strong>${entry.personName}</strong>
-      <small>Anrede: ${entry.salutation || ""} ${displayName}</small>
-      <small>Geschlecht: ${entry.gender || "nicht angegeben"}</small>
-      <small>${entry.relationship} • ${entry.bondStrength}</small>
-      <small>Stil: ${entry.communicationStyle}</small>
-      <small>${emojiInfo} • ${writerInfo}</small>
-      <small>E-Mail: ${entry.email || "nicht hinterlegt"}</small>
-      <small>WhatsApp: ${entry.whatsapp || "nicht hinterlegt"}</small>
-      <small>${entry.description}</small>`;
+    card.innerHTML = `<strong>${entry.personName}</strong>`;
 
     const actions = document.createElement("div");
     actions.className = "entry-actions";
