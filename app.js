@@ -345,7 +345,7 @@ function saveEntry() {
     birthDate: birthDateInput.value,
     personName: personNameInput.value.trim(),
     nickname: nicknameInput.value.trim(),
-    relationship: relationshipInput.value.trim(),
+    relationship: relationshipInput.value,
     salutation: salutationInput.value,
     gender: genderInput.value,
     bondStrength: bondStrengthInput.value,
@@ -383,7 +383,8 @@ function openWishModal(entry) {
 
 function generateWish(entry) {
   const salutationName = entry.nickname || entry.personName;
-  const isFormal = entry.communicationStyle === "respektvoll und formell";
+  const hasFormalSalutation = entry.salutation === "Herr" || entry.salutation === "Frau";
+  const isFormal = hasFormalSalutation || entry.communicationStyle === "respektvoll und formell";
   const isShortWriter = entry.writerType === "nein";
   const descriptionSignals = analyzeDescriptionSignals(entry.description);
   const variationSeed = `${entry.id}-${entry.birthDate}-${currentLocalDateKey(new Date())}`;
@@ -423,6 +424,63 @@ function generateWish(entry) {
     ],
   };
 
+  const relationshipLineMap = {
+    informal: {
+      Mutter: ["Danke, dass du immer für mich da bist."],
+      Vater: ["Danke für deinen Rat und deinen Rückhalt."],
+      Tochter: ["Ich bin stolz auf dich und freue mich, dich auf deinem Weg zu begleiten."],
+      Sohn: ["Es ist schön zu sehen, wie du deinen Weg gehst."],
+      Schwester: ["Es ist schön, dich als Schwester an meiner Seite zu haben."],
+      Bruder: ["Es ist schön, dich als Bruder an meiner Seite zu haben."],
+      Oma: ["Deine warmherzige Art macht jeden Moment besonders."],
+      Opa: ["Deine Lebenserfahrung und Ruhe bedeuten mir viel."],
+      Tante: ["Du bringst immer gute Stimmung mit."],
+      Onkel: ["Deine Art macht gemeinsame Zeit besonders angenehm."],
+      Cousine: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
+      Cousin: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
+      Enkelin: ["Dein Lachen macht jeden Tag heller."],
+      Enkel: ["Mit dir wird es nie langweilig."],
+      "Entfernter Verwandter": ["Ich freue mich immer über unsere Begegnungen."],
+      "Guter Freund": ["Unsere Freundschaft ist mir sehr wichtig."],
+      "Sehr guter Freund": ["Auf unsere Freundschaft kann ich mich immer verlassen."],
+      "Bester Freund": ["Es ist großartig, dich als besten Freund zu haben."],
+      "Entfernter Bekannter": ["Ich wünsche dir von Herzen nur das Beste."],
+      "Guter Bekannter": ["Ich freue mich immer, von dir zu hören."],
+      Arbeitskollege: ["Die Zusammenarbeit mit dir macht viel Freude."],
+      Chef: ["Danke für dein Vertrauen und die gute Zusammenarbeit."],
+      Sportsfreund: ["Gemeinsame sportliche Momente mit dir sind immer ein Highlight."],
+      Nachbar: ["Es ist schön, dich in der Nachbarschaft zu haben."],
+      Vereinskollege: ["Unsere gemeinsame Zeit im Verein macht immer Spaß."],
+    },
+    formal: {
+      Mutter: ["Ich danke Ihnen für Ihre Fürsorge und Unterstützung."],
+      Vater: ["Ich danke Ihnen für Ihren Rat und Ihre Unterstützung."],
+      Tochter: ["Ich wünsche Ihnen auf Ihrem Weg weiterhin viel Freude und Erfolg."],
+      Sohn: ["Ich wünsche Ihnen für Ihren Weg weiterhin alles Gute."],
+      Schwester: ["Ich schätze unseren familiären Zusammenhalt sehr."],
+      Bruder: ["Ich schätze unseren familiären Zusammenhalt sehr."],
+      Oma: ["Ihre warmherzige Art ist etwas ganz Besonderes."],
+      Opa: ["Ihre Erfahrung und ruhige Art schätze ich sehr."],
+      Tante: ["Ich wünsche Ihnen weiterhin viele schöne Momente."],
+      Onkel: ["Ich wünsche Ihnen weiterhin viele schöne Momente."],
+      Cousine: ["Ich freue mich über unseren wertschätzenden Kontakt."],
+      Cousin: ["Ich freue mich über unseren wertschätzenden Kontakt."],
+      Enkelin: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
+      Enkel: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
+      "Entfernter Verwandter": ["Ich freue mich über unseren Kontakt und wünsche Ihnen alles Gute."],
+      "Guter Freund": ["Unsere Verbundenheit ist mir wichtig."],
+      "Sehr guter Freund": ["Unsere langjährige Verbundenheit bedeutet mir viel."],
+      "Bester Freund": ["Ihre Freundschaft bedeutet mir sehr viel."],
+      "Entfernter Bekannter": ["Ich wünsche Ihnen für das neue Lebensjahr nur das Beste."],
+      "Guter Bekannter": ["Ich schätze den angenehmen Austausch mit Ihnen."],
+      Arbeitskollege: ["Ich schätze die Zusammenarbeit mit Ihnen sehr."],
+      Chef: ["Vielen Dank für Ihr Vertrauen und die wertschätzende Zusammenarbeit."],
+      Sportsfreund: ["Ich schätze die gemeinsamen sportlichen Aktivitäten mit Ihnen."],
+      Nachbar: ["Ich wünsche Ihnen als geschätztem Nachbarn alles Gute."],
+      Vereinskollege: ["Ich freue mich auf viele weitere gemeinsame Vereinsmomente."],
+    },
+  };
+
   const closenessLine = {
     informal: {
       "sehr eng": ["Du bist ein besonders wichtiger Mensch in meinem Leben."],
@@ -438,16 +496,23 @@ function generateWish(entry) {
     },
   };
 
-  const introLine = pickVariant(introMap[entry.communicationStyle] || introMap["kurz und direkt"], `${variationSeed}-intro`);
+  const introLine = isFormal
+    ? pickVariant(introMap["respektvoll und formell"], `${variationSeed}-intro-formal`)
+    : pickVariant(introMap[entry.communicationStyle] || introMap["kurz und direkt"], `${variationSeed}-intro`);
   const coreLine = pickVariant(
     isFormal ? coreWishMap.formal : coreWishMap.informal,
     `${variationSeed}-core-${descriptionSignals.vibe}`,
   );
-  const relationshipLine = pickVariant(
+  const closenessRelationshipLine = pickVariant(
     (isFormal ? closenessLine.formal : closenessLine.informal)[entry.bondStrength] ||
       (isFormal ? closenessLine.formal : closenessLine.informal).mittel,
     `${variationSeed}-bond`,
   );
+  const relationshipSpecificLine = pickVariant(
+    (isFormal ? relationshipLineMap.formal : relationshipLineMap.informal)[entry.relationship] || [],
+    `${variationSeed}-relationship`,
+  );
+  const relationshipLine = relationshipSpecificLine || closenessRelationshipLine;
   const styleAccent = buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed });
   const shortLine = isFormal ? "Genießen Sie Ihren besonderen Tag." : "Genieß deinen Tag in vollen Zügen.";
   const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
@@ -547,7 +612,7 @@ function resetForm() {
   state.editId = null;
   personNameInput.value = "";
   nicknameInput.value = "";
-  relationshipInput.value = "";
+  relationshipInput.value = "Mutter";
   salutationInput.value = "Herr";
   genderInput.value = "divers";
   descriptionInput.value = "";
