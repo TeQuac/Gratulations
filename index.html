@@ -147,6 +147,14 @@
               <option value="nein">Nein, lieber kurz</option>
             </select>
           </label>
+          <label>
+            E-Mail (optional, für Direktversand)
+            <input type="email" id="email" maxlength="120" placeholder="z. B. alex@example.com" />
+          </label>
+          <label>
+            WhatsApp-Nummer (optional, inkl. Ländervorwahl)
+            <input type="tel" id="whatsapp" maxlength="25" placeholder="z. B. +491701234567" />
+          </label>
           <div class="form-actions">
             <button type="button" id="saveEntryBtn">Speichern</button>
             <button type="button" id="clearFormBtn" class="secondary">Zurücksetzen</button>
@@ -164,6 +172,8 @@
         <p id="wishText" class="wish-text"></p>
         <div class="form-actions">
           <button type="button" id="copyWishBtn">Text kopieren</button>
+          <button type="button" id="sendMailBtn" class="secondary">Per E-Mail</button>
+          <button type="button" id="sendWhatsAppBtn" class="secondary">Per WhatsApp</button>
         </div>
       </form>
     </dialog>

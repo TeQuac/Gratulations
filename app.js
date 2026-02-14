@@ -12,6 +12,7 @@ const state = {
   entries: loadEntries(),
   dailyWishPayloads: [],
   reminderTimer: null,
+  currentWishEntry: null,
 };
 
 const calendarTitle = document.getElementById("calendarTitle");
@@ -41,12 +42,16 @@ const descriptionInput = document.getElementById("description");
 const communicationStyleInput = document.getElementById("communicationStyle");
 const emojiPreferenceInput = document.getElementById("emojiPreference");
 const writerTypeInput = document.getElementById("writerType");
+const emailInput = document.getElementById("email");
+const whatsappInput = document.getElementById("whatsapp");
 const saveEntryBtn = document.getElementById("saveEntryBtn");
 const clearFormBtn = document.getElementById("clearFormBtn");
 
 const wishModal = document.getElementById("wishModal");
 const wishText = document.getElementById("wishText");
 const copyWishBtn = document.getElementById("copyWishBtn");
+const sendMailBtn = document.getElementById("sendMailBtn");
+const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const closeWishModalBtn = document.getElementById("closeWishModalBtn");
 
 const notificationStatus = document.getElementById("notificationStatus");
@@ -75,6 +80,8 @@ function init() {
   saveEntryBtn.addEventListener("click", saveEntry);
   clearFormBtn.addEventListener("click", resetForm);
   copyWishBtn.addEventListener("click", copyWish);
+  sendMailBtn.addEventListener("click", sendWishByEmail);
+  sendWhatsAppBtn.addEventListener("click", sendWishByWhatsApp);
   closeDayModalBtn.addEventListener("click", () => dayModal.close());
   closeWishModalBtn.addEventListener("click", () => wishModal.close());
   closeDailyWishModalBtn.addEventListener("click", () => dailyWishModal.close());
@@ -294,6 +301,8 @@ function renderEntriesList() {
       <small>${entry.relationship} • ${entry.bondStrength}</small>
       <small>Stil: ${entry.communicationStyle}</small>
       <small>${emojiInfo} • ${writerInfo}</small>
+      <small>E-Mail: ${entry.email || "nicht hinterlegt"}</small>
+      <small>WhatsApp: ${entry.whatsapp || "nicht hinterlegt"}</small>
       <small>${entry.description}</small>`;
 
     const actions = document.createElement("div");
@@ -334,6 +343,8 @@ function populateForm(entry) {
   communicationStyleInput.value = entry.communicationStyle;
   emojiPreferenceInput.value = entry.emojiPreference || "ja";
   writerTypeInput.value = entry.writerType || "ja";
+  emailInput.value = entry.email || "";
+  whatsappInput.value = entry.whatsapp || "";
 }
 
 function saveEntry() {
@@ -354,6 +365,8 @@ function saveEntry() {
     communicationStyle: communicationStyleInput.value,
     emojiPreference: emojiPreferenceInput.value,
     writerType: writerTypeInput.value,
+    email: emailInput.value.trim(),
+    whatsapp: whatsappInput.value.trim(),
   };
 
   if (state.editId) {
@@ -378,7 +391,9 @@ function deleteEntry(id) {
 
 function openWishModal(entry) {
   const wish = generateWish(entry);
+  state.currentWishEntry = entry;
   wishText.textContent = wish;
+  updateDirectSendButtons(entry);
   wishModal.showModal();
 }
 
@@ -621,6 +636,8 @@ function resetForm() {
   communicationStyleInput.value = "herzlich und emotional";
   emojiPreferenceInput.value = "ja";
   writerTypeInput.value = "ja";
+  emailInput.value = "";
+  whatsappInput.value = "";
   birthDateInput.value = state.selectedDate || toISO(new Date());
 }
 
@@ -825,6 +842,41 @@ function renderDailyWishList() {
     card.append(actions);
     dailyWishList.append(card);
   });
+}
+
+
+function normalizePhoneNumber(rawNumber) {
+  return rawNumber.replace(/[^\d]/g, "");
+}
+
+function updateDirectSendButtons(entry) {
+  const hasEmail = Boolean((entry.email || "").trim());
+  const hasWhatsapp = Boolean(normalizePhoneNumber(entry.whatsapp || ""));
+  sendMailBtn.disabled = !hasEmail;
+  sendWhatsAppBtn.disabled = !hasWhatsapp;
+}
+
+function sendWishByEmail() {
+  if (!state.currentWishEntry) return;
+
+  const email = (state.currentWishEntry.email || "").trim();
+  if (!email) return;
+
+  const subject = `Geburtstagsgrüße für ${state.currentWishEntry.personName}`;
+  const body = wishText.textContent || "";
+  const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailtoUrl;
+}
+
+function sendWishByWhatsApp() {
+  if (!state.currentWishEntry) return;
+
+  const phone = normalizePhoneNumber(state.currentWishEntry.whatsapp || "");
+  if (!phone) return;
+
+  const body = wishText.textContent || "";
+  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(body)}`;
+  window.open(waUrl, "_blank", "noopener");
 }
 
 
