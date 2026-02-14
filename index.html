@@ -21,8 +21,12 @@
 
       <section class="calendar-panel">
         <div class="notification-banner" id="notificationBanner">
-          <p id="notificationStatus">Benachrichtigungen für Geburtstage sind deaktiviert.</p>
-          <button type="button" id="enableNotificationsBtn">07:00Z Benachrichtigungen aktivieren</button>
+          <p id="notificationStatus">Benachrichtigungen sind aus.</p>
+          <div class="notification-controls">
+            <label for="notificationTime">Uhrzeit</label>
+            <input type="time" id="notificationTime" value="08:00" />
+            <button type="button" id="enableNotificationsBtn">Benachrichtigungen aktivieren</button>
+          </div>
         </div>
         <div class="calendar-nav">
           <button id="prevBtn" aria-label="Zurück">◀</button>
@@ -125,7 +129,7 @@
     <dialog id="dailyWishModal" class="modal">
       <form method="dialog" class="modal-card">
         <div class="modal-head">
-          <h3>Automatische Geburtstagsgrüße heute (07:00Z)</h3>
+          <h3>Automatische Geburtstagsgrüße heute</h3>
           <button id="closeDailyWishModalBtn" class="icon-btn" type="button" aria-label="Fenster schließen">✕</button>
         </div>
         <div id="dailyWishList" class="entries-list"></div>

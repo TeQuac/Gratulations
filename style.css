@@ -346,6 +346,27 @@ textarea {
 }
 
 
+.notification-controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.notification-controls label {
+  color: #7a2408;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.notification-controls input[type="time"] {
+  min-width: 0;
+}
+
+.notification-controls button {
+  grid-column: 1 / -1;
+}
+
 .today-birthdays {
   margin-top: 12px;
   padding: 10px;
