@@ -12,6 +12,7 @@ const state = {
 const calendarTitle = document.getElementById("calendarTitle");
 const calendarGrid = document.getElementById("calendarGrid");
 const weekdayRow = document.getElementById("weekdayRow");
+const appShell = document.getElementById("appShell");
 const monthViewBtn = document.getElementById("monthViewBtn");
 const weekViewBtn = document.getElementById("weekViewBtn");
 const prevBtn = document.getElementById("prevBtn");
@@ -71,6 +72,9 @@ function setViewMode(mode) {
   weekViewBtn.classList.toggle("active", mode === "week");
   monthViewBtn.setAttribute("aria-selected", String(mode === "month"));
   weekViewBtn.setAttribute("aria-selected", String(mode === "week"));
+  appShell.classList.toggle("week-mode", mode === "week");
+  document.body.classList.toggle("week-mode", mode === "week");
+  weekdayRow.hidden = mode === "week";
   render();
 }
 
@@ -104,20 +108,29 @@ function render() {
 
     const dayNum = document.createElement("div");
     dayNum.className = "day-number";
-    dayNum.textContent = String(date.getDate());
+    if (state.viewMode === "week") {
+      dayNum.textContent = date.toLocaleDateString("de-DE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+      });
+    } else {
+      dayNum.textContent = String(date.getDate());
+    }
     cell.append(dayNum);
 
-    dayEntries.slice(0, 2).forEach((entry) => {
+    const entryLimit = state.viewMode === "week" ? 5 : 2;
+    dayEntries.slice(0, entryLimit).forEach((entry) => {
       const chip = document.createElement("div");
       chip.className = "birthday-chip";
       chip.textContent = `${entry.personName} • ${new Date(entry.birthDate).getFullYear()}`;
       cell.append(chip);
     });
 
-    if (dayEntries.length > 2) {
+    if (dayEntries.length > entryLimit) {
       const more = document.createElement("div");
       more.className = "birthday-chip";
-      more.textContent = `+${dayEntries.length - 2} weitere`;
+      more.textContent = `+${dayEntries.length - entryLimit} weitere`;
       cell.append(more);
     }
 
