@@ -21,6 +21,8 @@ const monthViewBtn = document.getElementById("monthViewBtn");
 const weekViewBtn = document.getElementById("weekViewBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
+const todayBirthdaysSection = document.getElementById("todayBirthdays");
+const todayBirthdaysList = document.getElementById("todayBirthdaysList");
 
 const dayModal = document.getElementById("dayModal");
 const modalDateTitle = document.getElementById("modalDateTitle");
@@ -31,17 +33,23 @@ const birthDateInput = document.getElementById("birthDate");
 const personNameInput = document.getElementById("personName");
 const nicknameInput = document.getElementById("nickname");
 const relationshipInput = document.getElementById("relationship");
+const salutationInput = document.getElementById("salutation");
+const genderInput = document.getElementById("gender");
 const bondStrengthInput = document.getElementById("bondStrength");
 const descriptionInput = document.getElementById("description");
 const communicationStyleInput = document.getElementById("communicationStyle");
 const emojiPreferenceInput = document.getElementById("emojiPreference");
 const writerTypeInput = document.getElementById("writerType");
+const emailInput = document.getElementById("email");
+const whatsappInput = document.getElementById("whatsapp");
 const saveEntryBtn = document.getElementById("saveEntryBtn");
 const clearFormBtn = document.getElementById("clearFormBtn");
 
 const wishModal = document.getElementById("wishModal");
 const wishText = document.getElementById("wishText");
 const copyWishBtn = document.getElementById("copyWishBtn");
+const sendMailBtn = document.getElementById("sendMailBtn");
+const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const closeWishModalBtn = document.getElementById("closeWishModalBtn");
 
 const notificationStatus = document.getElementById("notificationStatus");
@@ -69,6 +77,8 @@ function init() {
   saveEntryBtn.addEventListener("click", saveEntry);
   clearFormBtn.addEventListener("click", resetForm);
   copyWishBtn.addEventListener("click", copyWish);
+  sendMailBtn.addEventListener("click", sendWishByEmail);
+  sendWhatsAppBtn.addEventListener("click", sendWishByWhatsApp);
   closeDayModalBtn.addEventListener("click", () => dayModal.close());
   closeWishModalBtn.addEventListener("click", () => wishModal.close());
   closeDailyWishModalBtn.addEventListener("click", () => dailyWishModal.close());
@@ -99,6 +109,51 @@ function setViewMode(mode) {
   weekdayRow.hidden = mode === "week";
   render();
 }
+
+function birthdaysForToday() {
+  const today = new Date();
+  const month = today.getMonth();
+  const day = today.getDate();
+
+  return state.entries
+    .filter((entry) => {
+      const birthDate = new Date(entry.birthDate);
+      return birthDate.getMonth() === month && birthDate.getDate() === day;
+    })
+    .map((entry) => ({
+      ...entry,
+      age: today.getFullYear() - new Date(entry.birthDate).getFullYear(),
+    }));
+}
+
+function renderTodayBirthdays() {
+  if (!todayBirthdaysSection || !todayBirthdaysList) return;
+
+  if (state.viewMode !== "month") {
+    todayBirthdaysSection.hidden = true;
+    return;
+  }
+
+  todayBirthdaysSection.hidden = false;
+  todayBirthdaysList.innerHTML = "";
+
+  const todaysEntries = birthdaysForToday();
+  if (!todaysEntries.length) {
+    const item = document.createElement("li");
+    item.textContent = "Heute hat niemand Geburtstag.";
+    todayBirthdaysList.append(item);
+    return;
+  }
+
+  todaysEntries
+    .sort((a, b) => a.personName.localeCompare(b.personName, "de"))
+    .forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = `${entry.personName} wird ${entry.age} Jahre`;
+      todayBirthdaysList.append(item);
+    });
+}
+
 
 function moveCursor(direction) {
   const d = new Date(state.cursorDate);
@@ -159,6 +214,8 @@ function render() {
     cell.addEventListener("click", () => openDayModal(iso));
     calendarGrid.append(cell);
   });
+
+  renderTodayBirthdays();
 }
 
 function monthCells(date) {
@@ -230,15 +287,7 @@ function renderEntriesList() {
   items.forEach((entry) => {
     const card = document.createElement("article");
     card.className = "entry-item";
-    const displayName = entry.nickname || entry.personName;
-    const emojiInfo = entry.emojiPreference === "ja" ? "mit Smileys" : "ohne Smileys";
-    const writerInfo = entry.writerType === "ja" ? "Vielschreiber" : "Kurzschreiber";
-    card.innerHTML = `<strong>${entry.personName}</strong>
-      <small>Anrede: ${displayName}</small>
-      <small>${entry.relationship} • ${entry.bondStrength}</small>
-      <small>Stil: ${entry.communicationStyle}</small>
-      <small>${emojiInfo} • ${writerInfo}</small>
-      <small>${entry.description}</small>`;
+    card.innerHTML = `<strong>${entry.personName}</strong>`;
 
     const actions = document.createElement("div");
     actions.className = "entry-actions";
@@ -250,7 +299,8 @@ function renderEntriesList() {
 
     const wishBtn = document.createElement("button");
     wishBtn.type = "button";
-    wishBtn.textContent = "KI-Wunsch";
+    wishBtn.textContent = "Gratulieren!";
+    wishBtn.className = "copy-style-btn";
     wishBtn.addEventListener("click", () => openWishModal(entry));
 
     const deleteBtn = document.createElement("button");
@@ -270,11 +320,15 @@ function populateForm(entry) {
   personNameInput.value = entry.personName;
   nicknameInput.value = entry.nickname || "";
   relationshipInput.value = entry.relationship;
+  salutationInput.value = entry.salutation || "Herr";
+  genderInput.value = entry.gender || "divers";
   bondStrengthInput.value = entry.bondStrength;
   descriptionInput.value = entry.description;
   communicationStyleInput.value = entry.communicationStyle;
   emojiPreferenceInput.value = entry.emojiPreference || "ja";
   writerTypeInput.value = entry.writerType || "ja";
+  emailInput.value = entry.email || "";
+  whatsappInput.value = entry.whatsapp || "";
 }
 
 function saveEntry() {
@@ -287,12 +341,16 @@ function saveEntry() {
     birthDate: birthDateInput.value,
     personName: personNameInput.value.trim(),
     nickname: nicknameInput.value.trim(),
-    relationship: relationshipInput.value.trim(),
+    relationship: relationshipInput.value,
+    salutation: salutationInput.value,
+    gender: genderInput.value,
     bondStrength: bondStrengthInput.value,
     description: descriptionInput.value.trim(),
     communicationStyle: communicationStyleInput.value,
     emojiPreference: emojiPreferenceInput.value,
     writerType: writerTypeInput.value,
+    email: emailInput.value.trim(),
+    whatsapp: whatsappInput.value.trim(),
   };
 
   if (state.editId) {
@@ -317,54 +375,204 @@ function deleteEntry(id) {
 
 function openWishModal(entry) {
   const wish = generateWish(entry);
+  state.currentWishEntry = entry;
   wishText.textContent = wish;
+  updateDirectSendButtons(entry);
   wishModal.showModal();
 }
 
 function generateWish(entry) {
   const salutationName = entry.nickname || entry.personName;
+  const hasFormalSalutation = entry.salutation === "Herr" || entry.salutation === "Frau";
+  const isFormal = hasFormalSalutation || entry.communicationStyle === "respektvoll und formell";
+  const isShortWriter = entry.writerType === "nein";
+  const descriptionSignals = analyzeDescriptionSignals(entry.description);
+  const variationSeed = `${entry.id}-${entry.birthDate}-${currentLocalDateKey(new Date())}`;
+
+  const personGender = entry.gender || "divers";
+  const formalAddressee = `${entry.salutation || ""} ${entry.personName}`.trim();
+  const heartfeltAddressMap = {
+    "männlich": `Lieber ${salutationName}`,
+    "weiblich": `Liebe ${salutationName}`,
+    divers: `Hallo ${salutationName}`,
+  };
+
   const introMap = {
-    "herzlich und emotional": `Mein lieber ${salutationName}, heute denke ich mit ganz viel Wärme an dich`,
-    "locker und humorvoll": `Hey ${salutationName}, heute wird gefeiert – ganz klar dein Tag`,
-    "respektvoll und formell": `Liebe/r ${salutationName}, zu Ihrem heutigen Geburtstag übermittle ich Ihnen meine besten Wünsche`,
-    "kurz und direkt": `${salutationName}, alles Gute zum Geburtstag`,
+    "herzlich und emotional": [
+      `${heartfeltAddressMap[personGender] || heartfeltAddressMap.divers}, heute ist ein besonderer Tag für dich`,
+      `${heartfeltAddressMap[personGender] || heartfeltAddressMap.divers}, heute denke ich mit großer Freude an dich`,
+    ],
+    "locker und humorvoll": [
+      `Hey ${salutationName}, heute gehört die Bühne ganz dir`,
+      `Hi ${salutationName}, heute wird gefeiert – und zwar ordentlich`,
+    ],
+    "respektvoll und formell": [
+      `${formalAddressee || salutationName}, zu Ihrem Geburtstag übermittle ich Ihnen meine herzlichen Glückwünsche`,
+      `${formalAddressee || salutationName}, zu Ihrem heutigen Geburtstag wünsche ich Ihnen von Herzen alles Gute`,
+    ],
+    "kurz und direkt": [`${salutationName}, alles Gute zum Geburtstag`, `Happy Birthday, ${salutationName}`],
+  };
+
+  const coreWishMap = {
+    informal: [
+      "Ich wünsche dir Gesundheit, Freude und viele schöne Momente im neuen Lebensjahr.",
+      "Für dein neues Lebensjahr wünsche ich dir Glück, Energie und ganz viel Grund zum Lächeln.",
+    ],
+    formal: [
+      "Ich wünsche Ihnen Gesundheit, Freude und ein erfülltes neues Lebensjahr.",
+      "Für Ihr neues Lebensjahr wünsche ich Ihnen Glück, Erfolg und viele schöne Augenblicke.",
+    ],
+  };
+
+  const relationshipLineMap = {
+    informal: {
+      Mutter: ["Danke, dass du immer für mich da bist."],
+      Vater: ["Danke für deinen Rat und deinen Rückhalt."],
+      Tochter: ["Ich bin stolz auf dich und freue mich, dich auf deinem Weg zu begleiten."],
+      Sohn: ["Es ist schön zu sehen, wie du deinen Weg gehst."],
+      Schwester: ["Es ist schön, dich als Schwester an meiner Seite zu haben."],
+      Bruder: ["Es ist schön, dich als Bruder an meiner Seite zu haben."],
+      Oma: ["Deine warmherzige Art macht jeden Moment besonders."],
+      Opa: ["Deine Lebenserfahrung und Ruhe bedeuten mir viel."],
+      Tante: ["Du bringst immer gute Stimmung mit."],
+      Onkel: ["Deine Art macht gemeinsame Zeit besonders angenehm."],
+      Cousine: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
+      Cousin: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
+      Enkelin: ["Dein Lachen macht jeden Tag heller."],
+      Enkel: ["Mit dir wird es nie langweilig."],
+      "Entfernter Verwandter": ["Ich freue mich immer über unsere Begegnungen."],
+      "Guter Freund": ["Unsere Freundschaft ist mir sehr wichtig."],
+      "Sehr guter Freund": ["Auf unsere Freundschaft kann ich mich immer verlassen."],
+      "Bester Freund": ["Es ist großartig, dich als besten Freund zu haben."],
+      "Entfernter Bekannter": ["Ich wünsche dir von Herzen nur das Beste."],
+      "Guter Bekannter": ["Ich freue mich immer, von dir zu hören."],
+      Arbeitskollege: ["Die Zusammenarbeit mit dir macht viel Freude."],
+      Chef: ["Danke für dein Vertrauen und die gute Zusammenarbeit."],
+      Sportsfreund: ["Gemeinsame sportliche Momente mit dir sind immer ein Highlight."],
+      Nachbar: ["Es ist schön, dich in der Nachbarschaft zu haben."],
+      Vereinskollege: ["Unsere gemeinsame Zeit im Verein macht immer Spaß."],
+    },
+    formal: {
+      Mutter: ["Ich danke Ihnen für Ihre Fürsorge und Unterstützung."],
+      Vater: ["Ich danke Ihnen für Ihren Rat und Ihre Unterstützung."],
+      Tochter: ["Ich wünsche Ihnen auf Ihrem Weg weiterhin viel Freude und Erfolg."],
+      Sohn: ["Ich wünsche Ihnen für Ihren Weg weiterhin alles Gute."],
+      Schwester: ["Ich schätze unseren familiären Zusammenhalt sehr."],
+      Bruder: ["Ich schätze unseren familiären Zusammenhalt sehr."],
+      Oma: ["Ihre warmherzige Art ist etwas ganz Besonderes."],
+      Opa: ["Ihre Erfahrung und ruhige Art schätze ich sehr."],
+      Tante: ["Ich wünsche Ihnen weiterhin viele schöne Momente."],
+      Onkel: ["Ich wünsche Ihnen weiterhin viele schöne Momente."],
+      Cousine: ["Ich freue mich über unseren wertschätzenden Kontakt."],
+      Cousin: ["Ich freue mich über unseren wertschätzenden Kontakt."],
+      Enkelin: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
+      Enkel: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
+      "Entfernter Verwandter": ["Ich freue mich über unseren Kontakt und wünsche Ihnen alles Gute."],
+      "Guter Freund": ["Unsere Verbundenheit ist mir wichtig."],
+      "Sehr guter Freund": ["Unsere langjährige Verbundenheit bedeutet mir viel."],
+      "Bester Freund": ["Ihre Freundschaft bedeutet mir sehr viel."],
+      "Entfernter Bekannter": ["Ich wünsche Ihnen für das neue Lebensjahr nur das Beste."],
+      "Guter Bekannter": ["Ich schätze den angenehmen Austausch mit Ihnen."],
+      Arbeitskollege: ["Ich schätze die Zusammenarbeit mit Ihnen sehr."],
+      Chef: ["Vielen Dank für Ihr Vertrauen und die wertschätzende Zusammenarbeit."],
+      Sportsfreund: ["Ich schätze die gemeinsamen sportlichen Aktivitäten mit Ihnen."],
+      Nachbar: ["Ich wünsche Ihnen als geschätztem Nachbarn alles Gute."],
+      Vereinskollege: ["Ich freue mich auf viele weitere gemeinsame Vereinsmomente."],
+    },
   };
 
   const closenessLine = {
-    "sehr eng": "Du bist ein fester und besonders wichtiger Teil meines Lebens.",
-    eng: "Unsere Verbindung ist mir sehr wichtig und ich schätze sie jeden Tag.",
-    mittel: "Unsere Verbindung bedeutet mir viel und ich freue mich über unsere Gespräche.",
-    locker: "Ich denke gerne an unsere Begegnungen und wünsche dir nur das Beste.",
+    informal: {
+      "sehr eng": ["Du bist ein besonders wichtiger Mensch in meinem Leben."],
+      eng: ["Unsere Verbindung bedeutet mir sehr viel."],
+      mittel: ["Ich schätze unsere Gespräche und die gemeinsame Zeit sehr."],
+      locker: ["Ich denke gerne an unsere Begegnungen zurück."],
+    },
+    formal: {
+      "sehr eng": ["Unsere enge Verbindung bedeutet mir sehr viel."],
+      eng: ["Unsere Verbindung schätze ich sehr."],
+      mittel: ["Ich schätze den Austausch mit Ihnen sehr."],
+      locker: ["Ich wünsche Ihnen weiterhin alles Gute."],
+    },
   };
 
-  const signalWordHints = buildSignalHints(entry.description);
-  const bodyLine =
-    entry.writerType === "nein"
-      ? "Hab einen großartigen Tag und lass dich feiern."
-      : "Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.";
+  const introLine = isFormal
+    ? pickVariant(introMap["respektvoll und formell"], `${variationSeed}-intro-formal`)
+    : pickVariant(introMap[entry.communicationStyle] || introMap["kurz und direkt"], `${variationSeed}-intro`);
+  const coreLine = pickVariant(
+    isFormal ? coreWishMap.formal : coreWishMap.informal,
+    `${variationSeed}-core-${descriptionSignals.vibe}`,
+  );
+  const closenessRelationshipLine = pickVariant(
+    (isFormal ? closenessLine.formal : closenessLine.informal)[entry.bondStrength] ||
+      (isFormal ? closenessLine.formal : closenessLine.informal).mittel,
+    `${variationSeed}-bond`,
+  );
+  const relationshipSpecificLine = pickVariant(
+    (isFormal ? relationshipLineMap.formal : relationshipLineMap.informal)[entry.relationship] || [],
+    `${variationSeed}-relationship`,
+  );
+  const relationshipLine = relationshipSpecificLine || closenessRelationshipLine;
+  const styleAccent = buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed });
+  const shortLine = isFormal ? "Genießen Sie Ihren besonderen Tag." : "Genieß deinen Tag in vollen Zügen.";
   const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
 
   return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.\n${signalWordHints}\n${closenessLine[entry.bondStrength]}\n${bodyLine}\nLiebe Grüße${emojiSuffix}!`;
 }
 
-function buildSignalHints(description) {
+function analyzeDescriptionSignals(description) {
   const text = (description || "").toLowerCase();
   const signalMap = [
-    { keys: ["humor", "lustig", "lachen", "witz"], phrase: "Dein Humor bringt Leichtigkeit und gute Stimmung in jeden Moment." },
-    { keys: ["kreativ", "idee", "kunst", "musik"], phrase: "Deine kreative Art und deine Ideen inspirieren mich immer wieder." },
-    { keys: ["hilfsbereit", "zuverlässig", "ehrlich", "treu"], phrase: "Deine verlässliche und hilfsbereite Art ist etwas ganz Besonderes." },
-    { keys: ["stark", "mutig", "kämpfer", "durchhalte"], phrase: "Deine Stärke und dein Mut beeindrucken mich sehr." },
-    { keys: ["ruhig", "gelassen", "entspannt"], phrase: "Deine ruhige Art tut unglaublich gut und gibt Sicherheit." },
-    { keys: ["herzlich", "warm", "lieb", "empath"], phrase: "Deine herzliche Ausstrahlung macht Begegnungen mit dir besonders wertvoll." },
+    { keys: ["humor", "lustig", "lachen", "witz"], trait: "humorvoll", vibe: "locker" },
+    { keys: ["kreativ", "idee", "kunst", "musik"], trait: "kreativ", vibe: "lebendig" },
+    { keys: ["hilfsbereit", "zuverlässig", "ehrlich", "treu"], trait: "verlässlich", vibe: "warm" },
+    { keys: ["stark", "mutig", "kämpfer", "durchhalte"], trait: "stark", vibe: "wertschätzend" },
+    { keys: ["ruhig", "gelassen", "entspannt"], trait: "ruhig", vibe: "ruhig" },
+    { keys: ["herzlich", "warm", "lieb", "empath"], trait: "herzlich", vibe: "nah" },
   ];
 
-  const matched = signalMap.filter((item) => item.keys.some((key) => text.includes(key))).map((item) => item.phrase);
+  const matches = signalMap.filter((item) => item.keys.some((key) => text.includes(key)));
+  const traits = matches.map((item) => item.trait);
+  const vibe = matches[0]?.vibe || "neutral";
 
-  if (!matched.length) {
-    return "Ich schätze an dir besonders deine Art, wie du mit Menschen umgehst und positive Impulse setzt.";
+  return { traits, vibe };
+}
+
+function buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed }) {
+  if (isShortWriter || !descriptionSignals.traits.length) {
+    return "";
   }
 
-  return matched.slice(0, 2).join(" ");
+  const accentMap = {
+    humorvoll: {
+      informal: ["Mit dir wird es einfach nie langweilig."],
+      formal: ["Ihr Humor sorgt stets für eine angenehme Atmosphäre."],
+    },
+    kreativ: {
+      informal: ["Deine Ideen bringen immer frischen Wind hinein."],
+      formal: ["Ihre Kreativität beeindruckt mich immer wieder."],
+    },
+    verlässlich: {
+      informal: ["Auf dich ist immer Verlass, und das ist etwas Besonderes."],
+      formal: ["Ihre verlässliche Art schätze ich sehr."],
+    },
+    stark: {
+      informal: ["Deine Stärke motiviert mich immer wieder."],
+      formal: ["Ihre Stärke verdient großen Respekt."],
+    },
+    ruhig: {
+      informal: ["Deine ruhige Art tut richtig gut."],
+      formal: ["Ihre ruhige Art wirkt sehr wohltuend."],
+    },
+    herzlich: {
+      informal: ["Deine herzliche Art macht jeden Moment schöner."],
+      formal: ["Ihre herzliche Art macht den Austausch besonders angenehm."],
+    },
+  };
+
+  const trait = descriptionSignals.traits[0];
+  const options = accentMap[trait]?.[isFormal ? "formal" : "informal"] || [];
+  return pickVariant(options, `${variationSeed}-accent-${trait}`);
 }
 
 async function copyWish() {
@@ -375,17 +583,27 @@ function resetForm() {
   state.editId = null;
   personNameInput.value = "";
   nicknameInput.value = "";
-  relationshipInput.value = "";
+  relationshipInput.value = "Mutter";
+  salutationInput.value = "Herr";
+  genderInput.value = "divers";
   descriptionInput.value = "";
   bondStrengthInput.value = "sehr eng";
   communicationStyleInput.value = "herzlich und emotional";
   emojiPreferenceInput.value = "ja";
   writerTypeInput.value = "ja";
+  emailInput.value = "";
+  whatsappInput.value = "";
   birthDateInput.value = state.selectedDate || toISO(new Date());
 }
 
 function entriesForDate(isoDate) {
-  return state.entries.filter((entry) => entry.birthDate === isoDate);
+  const selectedMonthDay = monthDayKey(isoDate);
+  return state.entries.filter((entry) => monthDayKey(entry.birthDate) === selectedMonthDay);
+}
+
+function monthDayKey(isoDate) {
+  const [, month, day] = isoDate.split("-");
+  return `${month}-${day}`;
 }
 
 function persistEntries() {
@@ -412,20 +630,29 @@ function sameDay(a, b) {
 function attachSwipeNavigation() {
   const shell = document.getElementById("appShell");
   let startX = 0;
+  let startY = 0;
   let active = false;
 
   shell.addEventListener("touchstart", (event) => {
-    startX = event.touches[0].clientX;
+    const touch = event.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
     active = true;
   });
 
   shell.addEventListener("touchend", (event) => {
     if (!active) return;
-    const delta = event.changedTouches[0].clientX - startX;
-    if (Math.abs(delta) > 45) {
-      moveCursor(delta < 0 ? 1 : -1);
-    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
     active = false;
+
+    const isHorizontalSwipe = Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3;
+    if (!isHorizontalSwipe) return;
+
+    moveCursor(deltaX < 0 ? 1 : -1);
   });
 }
 
