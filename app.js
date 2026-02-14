@@ -34,6 +34,8 @@ const birthDateInput = document.getElementById("birthDate");
 const personNameInput = document.getElementById("personName");
 const nicknameInput = document.getElementById("nickname");
 const relationshipInput = document.getElementById("relationship");
+const salutationInput = document.getElementById("salutation");
+const genderInput = document.getElementById("gender");
 const bondStrengthInput = document.getElementById("bondStrength");
 const descriptionInput = document.getElementById("description");
 const communicationStyleInput = document.getElementById("communicationStyle");
@@ -287,7 +289,8 @@ function renderEntriesList() {
     const emojiInfo = entry.emojiPreference === "ja" ? "mit Smileys" : "ohne Smileys";
     const writerInfo = entry.writerType === "ja" ? "Vielschreiber" : "Kurzschreiber";
     card.innerHTML = `<strong>${entry.personName}</strong>
-      <small>Anrede: ${displayName}</small>
+      <small>Anrede: ${entry.salutation || ""} ${displayName}</small>
+      <small>Geschlecht: ${entry.gender || "nicht angegeben"}</small>
       <small>${entry.relationship} • ${entry.bondStrength}</small>
       <small>Stil: ${entry.communicationStyle}</small>
       <small>${emojiInfo} • ${writerInfo}</small>
@@ -323,6 +326,8 @@ function populateForm(entry) {
   personNameInput.value = entry.personName;
   nicknameInput.value = entry.nickname || "";
   relationshipInput.value = entry.relationship;
+  salutationInput.value = entry.salutation || "Herr";
+  genderInput.value = entry.gender || "divers";
   bondStrengthInput.value = entry.bondStrength;
   descriptionInput.value = entry.description;
   communicationStyleInput.value = entry.communicationStyle;
@@ -341,6 +346,8 @@ function saveEntry() {
     personName: personNameInput.value.trim(),
     nickname: nicknameInput.value.trim(),
     relationship: relationshipInput.value.trim(),
+    salutation: salutationInput.value,
+    gender: genderInput.value,
     bondStrength: bondStrengthInput.value,
     description: descriptionInput.value.trim(),
     communicationStyle: communicationStyleInput.value,
@@ -381,18 +388,26 @@ function generateWish(entry) {
   const descriptionSignals = analyzeDescriptionSignals(entry.description);
   const variationSeed = `${entry.id}-${entry.birthDate}-${currentLocalDateKey(new Date())}`;
 
+  const personGender = entry.gender || "divers";
+  const formalAddressee = `${entry.salutation || ""} ${entry.personName}`.trim();
+  const heartfeltAddressMap = {
+    "männlich": `Lieber ${salutationName}`,
+    "weiblich": `Liebe ${salutationName}`,
+    divers: `Hallo ${salutationName}`,
+  };
+
   const introMap = {
     "herzlich und emotional": [
-      `Liebe/r ${salutationName}, heute ist ein besonderer Tag für dich`,
-      `Mein/e liebe/r ${salutationName}, heute denke ich mit großer Freude an dich`,
+      `${heartfeltAddressMap[personGender] || heartfeltAddressMap.divers}, heute ist ein besonderer Tag für dich`,
+      `${heartfeltAddressMap[personGender] || heartfeltAddressMap.divers}, heute denke ich mit großer Freude an dich`,
     ],
     "locker und humorvoll": [
       `Hey ${salutationName}, heute gehört die Bühne ganz dir`,
       `Hi ${salutationName}, heute wird gefeiert – und zwar ordentlich`,
     ],
     "respektvoll und formell": [
-      `Sehr geehrte/r ${salutationName}, zu Ihrem Geburtstag übermittle ich Ihnen meine herzlichen Glückwünsche`,
-      `Liebe/r ${salutationName}, zu Ihrem heutigen Geburtstag wünsche ich Ihnen von Herzen alles Gute`,
+      `${formalAddressee || salutationName}, zu Ihrem Geburtstag übermittle ich Ihnen meine herzlichen Glückwünsche`,
+      `${formalAddressee || salutationName}, zu Ihrem heutigen Geburtstag wünsche ich Ihnen von Herzen alles Gute`,
     ],
     "kurz und direkt": [`${salutationName}, alles Gute zum Geburtstag`, `Happy Birthday, ${salutationName}`],
   };
@@ -533,6 +548,8 @@ function resetForm() {
   personNameInput.value = "";
   nicknameInput.value = "";
   relationshipInput.value = "";
+  salutationInput.value = "Herr";
+  genderInput.value = "divers";
   descriptionInput.value = "";
   bondStrengthInput.value = "sehr eng";
   communicationStyleInput.value = "herzlich und emotional";
