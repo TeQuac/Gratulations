@@ -2,7 +2,6 @@ const STORAGE_KEY = "birthday-entries-v1";
 const NOTIFY_PREF_KEY = "birthday-notify-enabled-v1";
 const LAST_NOTIFY_KEY = "birthday-last-notified-v1";
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-
 const state = {
   viewMode: "month",
   cursorDate: new Date(),
@@ -12,7 +11,6 @@ const state = {
   dailyWishPayloads: [],
   reminderTimer: null,
 };
-
 const calendarTitle = document.getElementById("calendarTitle");
 const calendarGrid = document.getElementById("calendarGrid");
 const weekdayRow = document.getElementById("weekdayRow");
@@ -23,12 +21,10 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const todayBirthdaysSection = document.getElementById("todayBirthdays");
 const todayBirthdaysList = document.getElementById("todayBirthdaysList");
-
 const dayModal = document.getElementById("dayModal");
 const modalDateTitle = document.getElementById("modalDateTitle");
 const entriesList = document.getElementById("entriesList");
 const closeDayModalBtn = document.getElementById("closeDayModalBtn");
-
 const birthDateInput = document.getElementById("birthDate");
 const personNameInput = document.getElementById("personName");
 const nicknameInput = document.getElementById("nickname");
@@ -44,23 +40,18 @@ const emailInput = document.getElementById("email");
 const whatsappInput = document.getElementById("whatsapp");
 const saveEntryBtn = document.getElementById("saveEntryBtn");
 const clearFormBtn = document.getElementById("clearFormBtn");
-
 const wishModal = document.getElementById("wishModal");
 const wishText = document.getElementById("wishText");
 const copyWishBtn = document.getElementById("copyWishBtn");
 const sendMailBtn = document.getElementById("sendMailBtn");
 const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const closeWishModalBtn = document.getElementById("closeWishModalBtn");
-
 const notificationStatus = document.getElementById("notificationStatus");
 const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
-
 const dailyWishModal = document.getElementById("dailyWishModal");
 const closeDailyWishModalBtn = document.getElementById("closeDailyWishModalBtn");
 const dailyWishList = document.getElementById("dailyWishList");
-
 init();
-
 function init() {
   weekdays.forEach((label) => {
     const cell = document.createElement("div");
@@ -68,12 +59,10 @@ function init() {
     cell.textContent = label;
     weekdayRow.append(cell);
   });
-
   monthViewBtn.addEventListener("click", () => setViewMode("month"));
   weekViewBtn.addEventListener("click", () => setViewMode("week"));
   prevBtn.addEventListener("click", () => moveCursor(-1));
   nextBtn.addEventListener("click", () => moveCursor(1));
-
   saveEntryBtn.addEventListener("click", saveEntry);
   clearFormBtn.addEventListener("click", resetForm);
   copyWishBtn.addEventListener("click", copyWish);
@@ -83,13 +72,11 @@ function init() {
   closeWishModalBtn.addEventListener("click", () => wishModal.close());
   closeDailyWishModalBtn.addEventListener("click", () => dailyWishModal.close());
   enableNotificationsBtn.addEventListener("click", enableBirthdayNotifications);
-
   attachSwipeNavigation();
   disableLongPressSelection();
   render();
   hydrateNotificationState();
 }
-
 function hydrateNotificationState() {
   updateNotificationStatus();
   if (isNotificationEnabled()) {
@@ -97,7 +84,6 @@ function hydrateNotificationState() {
     maybeSendDailyBirthdayNotifications();
   }
 }
-
 function setViewMode(mode) {
   state.viewMode = mode;
   monthViewBtn.classList.toggle("active", mode === "month");
@@ -109,12 +95,10 @@ function setViewMode(mode) {
   weekdayRow.hidden = mode === "week";
   render();
 }
-
 function birthdaysForToday() {
   const today = new Date();
   const month = today.getMonth();
   const day = today.getDate();
-
   return state.entries
     .filter((entry) => {
       const birthDate = new Date(entry.birthDate);
@@ -125,18 +109,14 @@ function birthdaysForToday() {
       age: today.getFullYear() - new Date(entry.birthDate).getFullYear(),
     }));
 }
-
 function renderTodayBirthdays() {
   if (!todayBirthdaysSection || !todayBirthdaysList) return;
-
   if (state.viewMode !== "month") {
     todayBirthdaysSection.hidden = true;
     return;
   }
-
   todayBirthdaysSection.hidden = false;
   todayBirthdaysList.innerHTML = "";
-
   const todaysEntries = birthdaysForToday();
   if (!todaysEntries.length) {
     const item = document.createElement("li");
@@ -144,7 +124,6 @@ function renderTodayBirthdays() {
     todayBirthdaysList.append(item);
     return;
   }
-
   todaysEntries
     .sort((a, b) => a.personName.localeCompare(b.personName, "de"))
     .forEach((entry) => {
@@ -153,8 +132,6 @@ function renderTodayBirthdays() {
       todayBirthdaysList.append(item);
     });
 }
-
-
 function moveCursor(direction) {
   const d = new Date(state.cursorDate);
   if (state.viewMode === "month") {
@@ -165,24 +142,20 @@ function moveCursor(direction) {
   state.cursorDate = d;
   render();
 }
-
 function render() {
   const cells = state.viewMode === "month" ? monthCells(state.cursorDate) : weekCells(state.cursorDate);
   calendarGrid.innerHTML = "";
   const current = new Date();
-
   calendarTitle.textContent =
     state.viewMode === "month"
       ? state.cursorDate.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
       : weekTitle(cells[0].date, cells[cells.length - 1].date);
-
   cells.forEach(({ date, muted }) => {
     const iso = toISO(date);
     const dayEntries = entriesForDate(iso);
     const cell = document.createElement("button");
     cell.className = `day-cell ${muted ? "muted" : ""} ${sameDay(date, current) ? "today" : ""}`;
     cell.type = "button";
-
     const dayNum = document.createElement("div");
     dayNum.className = "day-number";
     if (state.viewMode === "week") {
@@ -195,7 +168,6 @@ function render() {
       dayNum.textContent = String(date.getDate());
     }
     cell.append(dayNum);
-
     const entryLimit = state.viewMode === "week" ? 5 : 2;
     dayEntries.slice(0, entryLimit).forEach((entry) => {
       const chip = document.createElement("div");
@@ -203,28 +175,23 @@ function render() {
       chip.textContent = `${entry.personName} • ${new Date(entry.birthDate).getFullYear()}`;
       cell.append(chip);
     });
-
     if (dayEntries.length > entryLimit) {
       const more = document.createElement("div");
       more.className = "birthday-chip";
       more.textContent = `+${dayEntries.length - entryLimit} weitere`;
       cell.append(more);
     }
-
     cell.addEventListener("click", () => openDayModal(iso));
     calendarGrid.append(cell);
   });
-
   renderTodayBirthdays();
 }
-
 function monthCells(date) {
   const first = new Date(date.getFullYear(), date.getMonth(), 1);
   const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
   const lead = (first.getDay() + 6) % 7;
   const trailing = 6 - ((last.getDay() + 6) % 7);
   const cells = [];
-
   for (let i = lead; i > 0; i--) {
     const d = new Date(first);
     d.setDate(first.getDate() - i);
@@ -238,7 +205,6 @@ function monthCells(date) {
   }
   return cells;
 }
-
 function weekCells(date) {
   const monday = startOfWeek(date);
   return Array.from({ length: 7 }, (_, i) => {
@@ -247,20 +213,17 @@ function weekCells(date) {
     return { date: d, muted: false };
   });
 }
-
 function startOfWeek(date) {
   const d = new Date(date);
   const day = (d.getDay() + 6) % 7;
   d.setDate(d.getDate() - day);
   return d;
 }
-
 function weekTitle(start, end) {
   const startStr = start.toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
   const endStr = end.toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
   return `${startStr} – ${endStr}`;
 }
-
 function openDayModal(isoDate) {
   state.selectedDate = isoDate;
   resetForm();
@@ -274,46 +237,37 @@ function openDayModal(isoDate) {
   renderEntriesList();
   dayModal.showModal();
 }
-
 function renderEntriesList() {
   entriesList.innerHTML = "";
   const items = entriesForDate(state.selectedDate);
-
   if (!items.length) {
     entriesList.textContent = "Noch keine Geburtstage für diesen Tag gespeichert.";
     return;
   }
-
   items.forEach((entry) => {
     const card = document.createElement("article");
     card.className = "entry-item";
     card.innerHTML = `<strong>${entry.personName}</strong>`;
-
     const actions = document.createElement("div");
     actions.className = "entry-actions";
-
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.textContent = "Bearbeiten";
     editBtn.addEventListener("click", () => populateForm(entry));
-
     const wishBtn = document.createElement("button");
     wishBtn.type = "button";
     wishBtn.textContent = "Gratulieren!";
     wishBtn.className = "copy-style-btn";
     wishBtn.addEventListener("click", () => openWishModal(entry));
-
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.textContent = "Löschen";
     deleteBtn.addEventListener("click", () => deleteEntry(entry.id));
-
     actions.append(editBtn, wishBtn, deleteBtn);
     card.append(actions);
     entriesList.append(card);
   });
 }
-
 function populateForm(entry) {
   state.editId = entry.id;
   birthDateInput.value = entry.birthDate;
@@ -330,12 +284,10 @@ function populateForm(entry) {
   emailInput.value = entry.email || "";
   whatsappInput.value = entry.whatsapp || "";
 }
-
 function saveEntry() {
   if (!birthDateInput.value || !personNameInput.value || !relationshipInput.value || !descriptionInput.value) {
     return;
   }
-
   const payload = {
     id: state.editId ?? crypto.randomUUID(),
     birthDate: birthDateInput.value,
@@ -352,27 +304,23 @@ function saveEntry() {
     email: emailInput.value.trim(),
     whatsapp: whatsappInput.value.trim(),
   };
-
   if (state.editId) {
     state.entries = state.entries.map((item) => (item.id === state.editId ? payload : item));
   } else {
     state.entries.push(payload);
   }
-
   persistEntries();
   state.selectedDate = payload.birthDate;
   resetForm();
   renderEntriesList();
   render();
 }
-
 function deleteEntry(id) {
   state.entries = state.entries.filter((entry) => entry.id !== id);
   persistEntries();
   renderEntriesList();
   render();
 }
-
 function openWishModal(entry) {
   const wish = generateWish(entry);
   state.currentWishEntry = entry;
@@ -380,7 +328,6 @@ function openWishModal(entry) {
   updateDirectSendButtons(entry);
   wishModal.showModal();
 }
-
 function generateWish(entry) {
   const salutationName = entry.nickname || entry.personName;
   const hasFormalSalutation = entry.salutation === "Herr" || entry.salutation === "Frau";
@@ -388,7 +335,6 @@ function generateWish(entry) {
   const isShortWriter = entry.writerType === "nein";
   const descriptionSignals = analyzeDescriptionSignals(entry.description);
   const variationSeed = `${entry.id}-${entry.birthDate}-${currentLocalDateKey(new Date())}`;
-
   const personGender = entry.gender || "divers";
   const formalAddressee = `${entry.salutation || ""} ${entry.personName}`.trim();
   const heartfeltAddressMap = {
@@ -396,7 +342,6 @@ function generateWish(entry) {
     "weiblich": `Liebe ${salutationName}`,
     divers: `Hallo ${salutationName}`,
   };
-
   const introMap = {
     "herzlich und emotional": [
       `${heartfeltAddressMap[personGender] || heartfeltAddressMap.divers}, heute ist ein besonderer Tag für dich`,
@@ -412,7 +357,6 @@ function generateWish(entry) {
     ],
     "kurz und direkt": [`${salutationName}, alles Gute zum Geburtstag`, `Happy Birthday, ${salutationName}`],
   };
-
   const coreWishMap = {
     informal: [
       "Ich wünsche dir Gesundheit, Freude und viele schöne Momente im neuen Lebensjahr.",
@@ -423,7 +367,6 @@ function generateWish(entry) {
       "Für Ihr neues Lebensjahr wünsche ich Ihnen Glück, Erfolg und viele schöne Augenblicke.",
     ],
   };
-
   const relationshipLineMap = {
     informal: {
       Mutter: ["Danke, dass du immer für mich da bist."],
@@ -438,8 +381,14 @@ function generateWish(entry) {
       Onkel: ["Deine Art macht gemeinsame Zeit besonders angenehm."],
       Cousine: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
       Cousin: ["Mit dir fühlt sich Familie immer vertraut und leicht an."],
+      Nichte: ["Ich wünsche dir einen wunderschönen Tag voller Freude."],
+      Neffe: ["Ich wünsche dir einen tollen Tag voller schöner Momente."],
       Enkelin: ["Dein Lachen macht jeden Tag heller."],
       Enkel: ["Mit dir wird es nie langweilig."],
+      Schwiegermutter: ["Danke für deine herzliche Art und Unterstützung."],
+      Schwiegervater: ["Ich schätze deine ruhige und verlässliche Art sehr."],
+      Schwägerin: ["Es ist schön, dich in der Familie zu haben."],
+      Schwager: ["Schön, dass wir als Familie verbunden sind."],
       "Entfernter Verwandter": ["Ich freue mich immer über unsere Begegnungen."],
       "Guter Freund": ["Unsere Freundschaft ist mir sehr wichtig."],
       "Sehr guter Freund": ["Auf unsere Freundschaft kann ich mich immer verlassen."],
@@ -465,8 +414,14 @@ function generateWish(entry) {
       Onkel: ["Ich wünsche Ihnen weiterhin viele schöne Momente."],
       Cousine: ["Ich freue mich über unseren wertschätzenden Kontakt."],
       Cousin: ["Ich freue mich über unseren wertschätzenden Kontakt."],
+      Nichte: ["Ich wünsche Ihnen einen wunderbaren Geburtstag."],
+      Neffe: ["Ich wünsche Ihnen einen wunderbaren Geburtstag."],
       Enkelin: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
       Enkel: ["Ich wünsche Ihnen einen wundervollen Geburtstag."],
+      Schwiegermutter: ["Ich wünsche Ihnen alles Gute und viel Gesundheit."],
+      Schwiegervater: ["Ich wünsche Ihnen einen schönen und erfolgreichen Geburtstag."],
+      Schwägerin: ["Ich wünsche Ihnen viele schöne Momente im neuen Lebensjahr."],
+      Schwager: ["Ich wünsche Ihnen für das neue Lebensjahr alles Gute."],
       "Entfernter Verwandter": ["Ich freue mich über unseren Kontakt und wünsche Ihnen alles Gute."],
       "Guter Freund": ["Unsere Verbundenheit ist mir wichtig."],
       "Sehr guter Freund": ["Unsere langjährige Verbundenheit bedeutet mir viel."],
@@ -480,7 +435,6 @@ function generateWish(entry) {
       Vereinskollege: ["Ich freue mich auf viele weitere gemeinsame Vereinsmomente."],
     },
   };
-
   const closenessLine = {
     informal: {
       "sehr eng": ["Du bist ein besonders wichtiger Mensch in meinem Leben."],
@@ -495,7 +449,6 @@ function generateWish(entry) {
       locker: ["Ich wünsche Ihnen weiterhin alles Gute."],
     },
   };
-
   const introLine = isFormal
     ? pickVariant(introMap["respektvoll und formell"], `${variationSeed}-intro-formal`)
     : pickVariant(introMap[entry.communicationStyle] || introMap["kurz und direkt"], `${variationSeed}-intro`);
@@ -515,11 +468,30 @@ function generateWish(entry) {
   const relationshipLine = relationshipSpecificLine || closenessRelationshipLine;
   const styleAccent = buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed });
   const shortLine = isFormal ? "Genießen Sie Ihren besonderen Tag." : "Genieß deinen Tag in vollen Zügen.";
+  const outro = isFormal ? "Mit freundlichen Grüßen" : "Liebe Grüße";
   const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
-
-  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.\n${signalWordHints}\n${closenessLine[entry.bondStrength]}\n${bodyLine}\nLiebe Grüße${emojiSuffix}!`;
+  const lines = [introLine, coreLine, relationshipLine];
+  if (styleAccent) lines.push(styleAccent);
+  if (!isShortWriter) {
+    lines.push(shortLine);
+  }
+  lines.push(`${outro}${emojiSuffix}`);
+  return lines.join("\n");
 }
 
+function pickVariant(options, seed) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return "";
+  }
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return options[hash % options.length];
+}
+function currentLocalDateKey(now) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
 function analyzeDescriptionSignals(description) {
   const text = (description || "").toLowerCase();
   const signalMap = [
@@ -530,19 +502,15 @@ function analyzeDescriptionSignals(description) {
     { keys: ["ruhig", "gelassen", "entspannt"], trait: "ruhig", vibe: "ruhig" },
     { keys: ["herzlich", "warm", "lieb", "empath"], trait: "herzlich", vibe: "nah" },
   ];
-
   const matches = signalMap.filter((item) => item.keys.some((key) => text.includes(key)));
   const traits = matches.map((item) => item.trait);
   const vibe = matches[0]?.vibe || "neutral";
-
   return { traits, vibe };
 }
-
 function buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variationSeed }) {
   if (isShortWriter || !descriptionSignals.traits.length) {
     return "";
   }
-
   const accentMap = {
     humorvoll: {
       informal: ["Mit dir wird es einfach nie langweilig."],
@@ -569,16 +537,13 @@ function buildStyleAccent({ isFormal, isShortWriter, descriptionSignals, variati
       formal: ["Ihre herzliche Art macht den Austausch besonders angenehm."],
     },
   };
-
   const trait = descriptionSignals.traits[0];
   const options = accentMap[trait]?.[isFormal ? "formal" : "informal"] || [];
   return pickVariant(options, `${variationSeed}-accent-${trait}`);
 }
-
 async function copyWish() {
   await copyTextWithFeedback(copyWishBtn, wishText.textContent || "");
 }
-
 function resetForm() {
   state.editId = null;
   personNameInput.value = "";
@@ -595,21 +560,17 @@ function resetForm() {
   whatsappInput.value = "";
   birthDateInput.value = state.selectedDate || toISO(new Date());
 }
-
 function entriesForDate(isoDate) {
   const selectedMonthDay = monthDayKey(isoDate);
   return state.entries.filter((entry) => monthDayKey(entry.birthDate) === selectedMonthDay);
 }
-
 function monthDayKey(isoDate) {
   const [, month, day] = isoDate.split("-");
   return `${month}-${day}`;
 }
-
 function persistEntries() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
 }
-
 function loadEntries() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -618,78 +579,62 @@ function loadEntries() {
     return [];
   }
 }
-
 function toISO(date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
-
 function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
-
 function attachSwipeNavigation() {
   const shell = document.getElementById("appShell");
   let startX = 0;
   let startY = 0;
   let active = false;
-
   shell.addEventListener("touchstart", (event) => {
     const touch = event.touches[0];
     startX = touch.clientX;
     startY = touch.clientY;
     active = true;
   });
-
   shell.addEventListener("touchend", (event) => {
     if (!active) return;
-
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
-
     active = false;
-
     const isHorizontalSwipe = Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3;
     if (!isHorizontalSwipe) return;
-
     moveCursor(deltaX < 0 ? 1 : -1);
   });
 }
-
 function disableLongPressSelection() {
   document.addEventListener("contextmenu", (e) => e.preventDefault());
   document.addEventListener("selectstart", (e) => e.preventDefault());
 }
-
 async function enableBirthdayNotifications() {
   if (!("Notification" in window)) {
     notificationStatus.textContent = "Dieser Browser unterstützt keine Push-Benachrichtigungen.";
     return;
   }
-
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     notificationStatus.textContent = "Benachrichtigungen wurden nicht freigegeben.";
     return;
   }
-
   localStorage.setItem(NOTIFY_PREF_KEY, "enabled");
   updateNotificationStatus();
   maybeSendDailyBirthdayNotifications();
   scheduleReminderCheck();
 }
-
 function isNotificationEnabled() {
   return localStorage.getItem(NOTIFY_PREF_KEY) === "enabled" && Notification.permission === "granted";
 }
-
 function updateNotificationStatus() {
   if (!("Notification" in window)) {
     notificationStatus.textContent = "Dieser Browser unterstützt keine System-Benachrichtigungen.";
     enableNotificationsBtn.disabled = true;
     return;
   }
-
   enableNotificationsBtn.disabled = Notification.permission === "granted" && isNotificationEnabled();
   if (isNotificationEnabled()) {
     notificationStatus.textContent =
@@ -698,63 +643,51 @@ function updateNotificationStatus() {
     notificationStatus.textContent = "Benachrichtigungen für Geburtstage sind deaktiviert.";
   }
 }
-
 function scheduleReminderCheck() {
   if (!isNotificationEnabled()) return;
-
   if (state.reminderTimer) {
     clearTimeout(state.reminderTimer);
   }
-
   const now = new Date();
   const nextTrigger = new Date(now);
   nextTrigger.setUTCHours(7, 0, 0, 0);
   if (now >= nextTrigger) {
     nextTrigger.setUTCDate(nextTrigger.getUTCDate() + 1);
   }
-
   const delay = Math.max(nextTrigger.getTime() - now.getTime(), 500);
   state.reminderTimer = setTimeout(() => {
     maybeSendDailyBirthdayNotifications();
     scheduleReminderCheck();
   }, delay);
 }
-
 function maybeSendDailyBirthdayNotifications() {
   if (!isNotificationEnabled()) return;
-
   const now = new Date();
   const alreadySentToday = localStorage.getItem(LAST_NOTIFY_KEY) === currentUtcDateKey(now);
   const afterTrigger = now.getUTCHours() > 7 || (now.getUTCHours() === 7 && now.getUTCMinutes() >= 0);
   if (alreadySentToday || !afterTrigger) return;
-
   const todaysEntries = entriesForTodayUTC(now);
   if (!todaysEntries.length) {
     localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
     return;
   }
-
   state.dailyWishPayloads = todaysEntries.map((entry) => ({ entry, wish: generateWish(entry) }));
   showDailyNotifications(state.dailyWishPayloads);
   renderDailyWishList();
   dailyWishModal.showModal();
   localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
 }
-
 function entriesForTodayUTC(now) {
   const utcMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
   const utcDay = String(now.getUTCDate()).padStart(2, "0");
-
   return state.entries.filter((entry) => {
     const [, month, day] = entry.birthDate.split("-");
     return month === utcMonth && day === utcDay;
   });
 }
-
 function currentUtcDateKey(now) {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
 }
-
 function showDailyNotifications(payloads) {
   payloads.forEach(({ entry, wish }) => {
     const shortWish = wish.replace(/\s+/g, " ").slice(0, 120);
@@ -763,7 +696,6 @@ function showDailyNotifications(payloads) {
       tag: `birthday-${entry.id}-${currentUtcDateKey(new Date())}`,
       renotify: false,
     });
-
     notice.onclick = () => {
       window.focus();
       dailyWishModal.close();
@@ -771,29 +703,48 @@ function showDailyNotifications(payloads) {
     };
   });
 }
-
 function renderDailyWishList() {
   dailyWishList.innerHTML = "";
-
   state.dailyWishPayloads.forEach(({ entry, wish }) => {
     const card = document.createElement("article");
     card.className = "entry-item";
     card.innerHTML = `<strong>${entry.personName}</strong><small>${wish.replace(/\n/g, "<br> ")}</small>`;
-
     const actions = document.createElement("div");
     actions.className = "entry-actions";
-
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
     copyBtn.textContent = "Text kopieren";
     copyBtn.addEventListener("click", () => copyTextWithFeedback(copyBtn, wish));
-
     actions.append(copyBtn);
     card.append(actions);
     dailyWishList.append(card);
   });
 }
-
+function updateDirectSendButtons(entry) {
+  const hasMail = Boolean((entry.email || "").trim());
+  const hasWhatsApp = Boolean(normalizeWhatsAppNumber(entry.whatsapp || ""));
+  sendMailBtn.disabled = !hasMail;
+  sendWhatsAppBtn.disabled = !hasWhatsApp;
+}
+function sendWishByEmail() {
+  const entry = state.currentWishEntry;
+  const message = wishText.textContent || "";
+  if (!entry || !entry.email || !message) return;
+  const subject = `Geburtstagsgrüße für ${entry.personName}`;
+  const mailto = `mailto:${encodeURIComponent(entry.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  window.location.href = mailto;
+}
+function sendWishByWhatsApp() {
+  const entry = state.currentWishEntry;
+  const message = wishText.textContent || "";
+  const phone = normalizeWhatsAppNumber(entry?.whatsapp || "");
+  if (!entry || !phone || !message) return;
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank", "noopener");
+}
+function normalizeWhatsAppNumber(value) {
+  return (value || "").replace(/[^\d]/g, "");
+}
 async function copyTextWithFeedback(button, text) {
   try {
     await navigator.clipboard.writeText(text);
