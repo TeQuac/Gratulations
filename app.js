@@ -306,7 +306,8 @@ function renderEntriesList() {
 
     const wishBtn = document.createElement("button");
     wishBtn.type = "button";
-    wishBtn.textContent = "KI-Wunsch";
+    wishBtn.textContent = "Gratulieren!";
+    wishBtn.className = "copy-style-btn";
     wishBtn.addEventListener("click", () => openWishModal(entry));
 
     const deleteBtn = document.createElement("button");

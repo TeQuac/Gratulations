@@ -281,6 +281,14 @@ h1 {
   gap: 6px;
 }
 
+.entry-actions .copy-style-btn {
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffce3b 0%, #f4653d 100%);
+  color: #5d1400;
+}
+
 .entry-form {
   border: 1px solid #ffd4b0;
   border-radius: 12px;
