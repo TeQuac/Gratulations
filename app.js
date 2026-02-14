@@ -11,6 +11,7 @@ const state = {
   entries: loadEntries(),
   dailyWishPayloads: [],
   reminderTimer: null,
+  swRegistration: null,
 };
 const calendarTitle = document.getElementById("calendarTitle");
 const calendarGrid = document.getElementById("calendarGrid");
@@ -78,7 +79,16 @@ function init() {
   attachSwipeNavigation();
   disableLongPressSelection();
   render();
+  registerServiceWorker();
   hydrateNotificationState();
+}
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    state.swRegistration = await navigator.serviceWorker.register("./service-worker.js");
+  } catch {
+    state.swRegistration = null;
+  }
 }
 function hydrateNotificationState() {
   hydrateNotificationTime();
@@ -86,6 +96,7 @@ function hydrateNotificationState() {
   if (isNotificationEnabled()) {
     scheduleReminderCheck();
     maybeSendDailyBirthdayNotifications();
+    scheduleBackgroundBirthdayNotifications();
   }
 }
 function hydrateNotificationTime() {
@@ -104,6 +115,7 @@ function handleNotificationTimeChange() {
   if (isNotificationEnabled()) {
     scheduleReminderCheck();
     maybeSendDailyBirthdayNotifications();
+    scheduleBackgroundBirthdayNotifications();
   }
 }
 function notificationTriggerTime() {
@@ -602,6 +614,9 @@ function monthDayKey(isoDate) {
 }
 function persistEntries() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+  if (isNotificationEnabled()) {
+    scheduleBackgroundBirthdayNotifications();
+  }
 }
 function loadEntries() {
   try {
@@ -658,6 +673,7 @@ async function enableBirthdayNotifications() {
   updateNotificationStatus();
   maybeSendDailyBirthdayNotifications();
   scheduleReminderCheck();
+  scheduleBackgroundBirthdayNotifications();
 }
 function isNotificationEnabled() {
   return localStorage.getItem(NOTIFY_PREF_KEY) === "enabled" && Notification.permission === "granted";
@@ -674,11 +690,42 @@ function updateNotificationStatus() {
     notificationTimeInput.disabled = false;
   }
   if (isNotificationEnabled()) {
-    notificationStatus.textContent =
-      `Aktiv: Geburtstags-Erinnerungen werden täglich um ${trigger.label} (lokale Zeit) ausgelöst, solange die App geöffnet oder als aktive PWA im Hintergrund läuft.`;
+    notificationStatus.textContent = `Aktiv • Tägliche Erinnerung um ${trigger.label}`;
   } else {
-    notificationStatus.textContent = `Benachrichtigungen sind deaktiviert. Gewählte Erinnerungszeit: ${trigger.label} (lokale Zeit).`;
+    notificationStatus.textContent = `Aus • Erinnerungszeit: ${trigger.label}`;
   }
+}
+async function scheduleBackgroundBirthdayNotifications() {
+  if (!isNotificationEnabled()) return;
+  if (!("serviceWorker" in navigator) || !("TimestampTrigger" in window)) return;
+  const registration = state.swRegistration || (await navigator.serviceWorker.ready.catch(() => null));
+  if (!registration?.showNotification) return;
+  const trigger = notificationTriggerTime();
+  const now = new Date();
+  const upcomingBirthdays = state.entries.map((entry) => {
+    const [year, month, day] = entry.birthDate.split("-").map((part) => Number.parseInt(part, 10));
+    const candidate = new Date(now.getFullYear(), month - 1, day, trigger.hours, trigger.minutes, 0, 0);
+    if (candidate < now) {
+      candidate.setFullYear(candidate.getFullYear() + 1);
+    }
+    const age = candidate.getFullYear() - year;
+    return { entry, triggerAt: candidate, age };
+  });
+  await Promise.all(
+    upcomingBirthdays.map(async ({ entry, triggerAt, age }) => {
+      try {
+        await registration.showNotification(`🎂 ${entry.personName} hat Geburtstag`, {
+          body: `${entry.personName} wird ${age}. Öffne die App für den Glückwunschtext.`,
+          tag: `birthday-reminder-${entry.id}-${triggerAt.getFullYear()}`,
+          renotify: false,
+          showTrigger: new TimestampTrigger(triggerAt.getTime()),
+          data: { entryId: entry.id },
+        });
+      } catch {
+        // Fallback bleibt der lokale Tages-Check, solange die App aktiv ist.
+      }
+    }),
+  );
 }
 function scheduleReminderCheck() {
   if (!isNotificationEnabled()) return;
