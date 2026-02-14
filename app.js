@@ -592,20 +592,29 @@ function sameDay(a, b) {
 function attachSwipeNavigation() {
   const shell = document.getElementById("appShell");
   let startX = 0;
+  let startY = 0;
   let active = false;
 
   shell.addEventListener("touchstart", (event) => {
-    startX = event.touches[0].clientX;
+    const touch = event.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
     active = true;
   });
 
   shell.addEventListener("touchend", (event) => {
     if (!active) return;
-    const delta = event.changedTouches[0].clientX - startX;
-    if (Math.abs(delta) > 45) {
-      moveCursor(delta < 0 ? 1 : -1);
-    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
     active = false;
+
+    const isHorizontalSwipe = Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3;
+    if (!isHorizontalSwipe) return;
+
+    moveCursor(deltaX < 0 ? 1 : -1);
   });
 }
 
