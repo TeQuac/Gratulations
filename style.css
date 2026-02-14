@@ -313,3 +313,32 @@ textarea {
   line-height: 1.45;
   white-space: pre-wrap;
 }
+
+.notification-banner {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #ffd3ab;
+  border-radius: 12px;
+  background: #fff3df;
+  margin-bottom: 10px;
+}
+
+.notification-banner p {
+  margin: 0;
+  color: #7a2408;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.notification-banner button {
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #ffce3b 0%, #f4653d 100%);
+  color: #5d1400;
+}
+
+.notification-banner button:disabled {
+  opacity: 0.6;
+}
