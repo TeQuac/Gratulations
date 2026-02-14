@@ -21,6 +21,8 @@ const monthViewBtn = document.getElementById("monthViewBtn");
 const weekViewBtn = document.getElementById("weekViewBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
+const todayBirthdaysSection = document.getElementById("todayBirthdays");
+const todayBirthdaysList = document.getElementById("todayBirthdaysList");
 
 const dayModal = document.getElementById("dayModal");
 const modalDateTitle = document.getElementById("modalDateTitle");
@@ -100,6 +102,51 @@ function setViewMode(mode) {
   render();
 }
 
+function birthdaysForToday() {
+  const today = new Date();
+  const month = today.getMonth();
+  const day = today.getDate();
+
+  return state.entries
+    .filter((entry) => {
+      const birthDate = new Date(entry.birthDate);
+      return birthDate.getMonth() === month && birthDate.getDate() === day;
+    })
+    .map((entry) => ({
+      ...entry,
+      age: today.getFullYear() - new Date(entry.birthDate).getFullYear(),
+    }));
+}
+
+function renderTodayBirthdays() {
+  if (!todayBirthdaysSection || !todayBirthdaysList) return;
+
+  if (state.viewMode !== "month") {
+    todayBirthdaysSection.hidden = true;
+    return;
+  }
+
+  todayBirthdaysSection.hidden = false;
+  todayBirthdaysList.innerHTML = "";
+
+  const todaysEntries = birthdaysForToday();
+  if (!todaysEntries.length) {
+    const item = document.createElement("li");
+    item.textContent = "Heute hat niemand Geburtstag.";
+    todayBirthdaysList.append(item);
+    return;
+  }
+
+  todaysEntries
+    .sort((a, b) => a.personName.localeCompare(b.personName, "de"))
+    .forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = `${entry.personName} wird ${entry.age} Jahre`;
+      todayBirthdaysList.append(item);
+    });
+}
+
+
 function moveCursor(direction) {
   const d = new Date(state.cursorDate);
   if (state.viewMode === "month") {
@@ -159,6 +206,8 @@ function render() {
     cell.addEventListener("click", () => openDayModal(iso));
     calendarGrid.append(cell);
   });
+
+  renderTodayBirthdays();
 }
 
 function monthCells(date) {
