@@ -1,4 +1,6 @@
 const STORAGE_KEY = "birthday-entries-v1";
+const NOTIFY_PREF_KEY = "birthday-notify-enabled-v1";
+const LAST_NOTIFY_KEY = "birthday-last-notified-v1";
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
 const state = {
@@ -7,6 +9,8 @@ const state = {
   selectedDate: null,
   editId: null,
   entries: loadEntries(),
+  dailyWishPayloads: [],
+  reminderTimer: null,
 };
 
 const calendarTitle = document.getElementById("calendarTitle");
@@ -40,6 +44,13 @@ const wishText = document.getElementById("wishText");
 const copyWishBtn = document.getElementById("copyWishBtn");
 const closeWishModalBtn = document.getElementById("closeWishModalBtn");
 
+const notificationStatus = document.getElementById("notificationStatus");
+const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
+
+const dailyWishModal = document.getElementById("dailyWishModal");
+const closeDailyWishModalBtn = document.getElementById("closeDailyWishModalBtn");
+const dailyWishList = document.getElementById("dailyWishList");
+
 init();
 
 function init() {
@@ -60,10 +71,21 @@ function init() {
   copyWishBtn.addEventListener("click", copyWish);
   closeDayModalBtn.addEventListener("click", () => dayModal.close());
   closeWishModalBtn.addEventListener("click", () => wishModal.close());
+  closeDailyWishModalBtn.addEventListener("click", () => dailyWishModal.close());
+  enableNotificationsBtn.addEventListener("click", enableBirthdayNotifications);
 
   attachSwipeNavigation();
   disableLongPressSelection();
   render();
+  hydrateNotificationState();
+}
+
+function hydrateNotificationState() {
+  updateNotificationStatus();
+  if (isNotificationEnabled()) {
+    scheduleReminderCheck();
+    maybeSendDailyBirthdayNotifications();
+  }
 }
 
 function setViewMode(mode) {
@@ -322,11 +344,7 @@ function generateWish(entry) {
       : "Ich wünsche dir Gesundheit, Freude und ein neues Lebensjahr mit vielen schönen Momenten.";
   const emojiSuffix = entry.emojiPreference === "ja" ? " 🎉🥳" : "";
 
-  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.
-${signalWordHints}
-${closenessLine[entry.bondStrength]}
-${bodyLine}
-Liebe Grüße${emojiSuffix}!`;
+  return `${introMap[entry.communicationStyle] || `Alles Gute zum Geburtstag, ${salutationName}`}.\n${signalWordHints}\n${closenessLine[entry.bondStrength]}\n${bodyLine}\nLiebe Grüße${emojiSuffix}!`;
 }
 
 function buildSignalHints(description) {
@@ -350,13 +368,7 @@ function buildSignalHints(description) {
 }
 
 async function copyWish() {
-  try {
-    await navigator.clipboard.writeText(wishText.textContent || "");
-    copyWishBtn.textContent = "Kopiert ✓";
-    setTimeout(() => (copyWishBtn.textContent = "Text kopieren"), 1200);
-  } catch {
-    copyWishBtn.textContent = "Kopieren fehlgeschlagen";
-  }
+  await copyTextWithFeedback(copyWishBtn, wishText.textContent || "");
 }
 
 function resetForm() {
@@ -420,4 +432,147 @@ function attachSwipeNavigation() {
 function disableLongPressSelection() {
   document.addEventListener("contextmenu", (e) => e.preventDefault());
   document.addEventListener("selectstart", (e) => e.preventDefault());
+}
+
+async function enableBirthdayNotifications() {
+  if (!("Notification" in window)) {
+    notificationStatus.textContent = "Dieser Browser unterstützt keine Push-Benachrichtigungen.";
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    notificationStatus.textContent = "Benachrichtigungen wurden nicht freigegeben.";
+    return;
+  }
+
+  localStorage.setItem(NOTIFY_PREF_KEY, "enabled");
+  updateNotificationStatus();
+  maybeSendDailyBirthdayNotifications();
+  scheduleReminderCheck();
+}
+
+function isNotificationEnabled() {
+  return localStorage.getItem(NOTIFY_PREF_KEY) === "enabled" && Notification.permission === "granted";
+}
+
+function updateNotificationStatus() {
+  if (!("Notification" in window)) {
+    notificationStatus.textContent = "Dieser Browser unterstützt keine System-Benachrichtigungen.";
+    enableNotificationsBtn.disabled = true;
+    return;
+  }
+
+  enableNotificationsBtn.disabled = Notification.permission === "granted" && isNotificationEnabled();
+  if (isNotificationEnabled()) {
+    notificationStatus.textContent =
+      "Aktiv: Geburtstags-Erinnerungen werden täglich um 07:00 UTC ausgelöst (solange die App geöffnet oder als aktive PWA im Hintergrund läuft).";
+  } else {
+    notificationStatus.textContent = "Benachrichtigungen für Geburtstage sind deaktiviert.";
+  }
+}
+
+function scheduleReminderCheck() {
+  if (!isNotificationEnabled()) return;
+
+  if (state.reminderTimer) {
+    clearTimeout(state.reminderTimer);
+  }
+
+  const now = new Date();
+  const nextTrigger = new Date(now);
+  nextTrigger.setUTCHours(7, 0, 0, 0);
+  if (now >= nextTrigger) {
+    nextTrigger.setUTCDate(nextTrigger.getUTCDate() + 1);
+  }
+
+  const delay = Math.max(nextTrigger.getTime() - now.getTime(), 500);
+  state.reminderTimer = setTimeout(() => {
+    maybeSendDailyBirthdayNotifications();
+    scheduleReminderCheck();
+  }, delay);
+}
+
+function maybeSendDailyBirthdayNotifications() {
+  if (!isNotificationEnabled()) return;
+
+  const now = new Date();
+  const alreadySentToday = localStorage.getItem(LAST_NOTIFY_KEY) === currentUtcDateKey(now);
+  const afterTrigger = now.getUTCHours() > 7 || (now.getUTCHours() === 7 && now.getUTCMinutes() >= 0);
+  if (alreadySentToday || !afterTrigger) return;
+
+  const todaysEntries = entriesForTodayUTC(now);
+  if (!todaysEntries.length) {
+    localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
+    return;
+  }
+
+  state.dailyWishPayloads = todaysEntries.map((entry) => ({ entry, wish: generateWish(entry) }));
+  showDailyNotifications(state.dailyWishPayloads);
+  renderDailyWishList();
+  dailyWishModal.showModal();
+  localStorage.setItem(LAST_NOTIFY_KEY, currentUtcDateKey(now));
+}
+
+function entriesForTodayUTC(now) {
+  const utcMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const utcDay = String(now.getUTCDate()).padStart(2, "0");
+
+  return state.entries.filter((entry) => {
+    const [, month, day] = entry.birthDate.split("-");
+    return month === utcMonth && day === utcDay;
+  });
+}
+
+function currentUtcDateKey(now) {
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
+}
+
+function showDailyNotifications(payloads) {
+  payloads.forEach(({ entry, wish }) => {
+    const shortWish = wish.replace(/\s+/g, " ").slice(0, 120);
+    const notice = new Notification(`🎂 ${entry.personName} hat heute Geburtstag`, {
+      body: `${shortWish}${wish.length > 120 ? "…" : ""}`,
+      tag: `birthday-${entry.id}-${currentUtcDateKey(new Date())}`,
+      renotify: false,
+    });
+
+    notice.onclick = () => {
+      window.focus();
+      dailyWishModal.close();
+      openWishModal(entry);
+    };
+  });
+}
+
+function renderDailyWishList() {
+  dailyWishList.innerHTML = "";
+
+  state.dailyWishPayloads.forEach(({ entry, wish }) => {
+    const card = document.createElement("article");
+    card.className = "entry-item";
+    card.innerHTML = `<strong>${entry.personName}</strong><small>${wish.replace(/\n/g, "<br> ")}</small>`;
+
+    const actions = document.createElement("div");
+    actions.className = "entry-actions";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.textContent = "Text kopieren";
+    copyBtn.addEventListener("click", () => copyTextWithFeedback(copyBtn, wish));
+
+    actions.append(copyBtn);
+    card.append(actions);
+    dailyWishList.append(card);
+  });
+}
+
+async function copyTextWithFeedback(button, text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = "Kopiert ✓";
+    setTimeout(() => (button.textContent = "Text kopieren"), 1200);
+  } catch {
+    button.textContent = "Kopieren fehlgeschlagen";
+  }
 }
