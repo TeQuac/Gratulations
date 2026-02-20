@@ -86,10 +86,41 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   try {
     state.swRegistration = await navigator.serviceWorker.register("./service-worker.js");
+    await syncNotificationConfigToServiceWorker();
   } catch {
     state.swRegistration = null;
   }
 }
+async function syncNotificationConfigToServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  const registration = state.swRegistration || (await navigator.serviceWorker.ready.catch(() => null));
+  if (!registration?.active) return;
+  const trigger = notificationTriggerTime();
+  registration.active.postMessage({
+    type: "SYNC_BIRTHDAY_CONFIG",
+    payload: {
+      enabled: isNotificationEnabled(),
+      trigger,
+      entries: state.entries,
+      updatedAt: Date.now(),
+    },
+  });
+  if (registration.periodicSync?.register) {
+    try {
+      await registration.periodicSync.register("birthday-daily-check", { minInterval: 12 * 60 * 60 * 1000 });
+    } catch {
+      // Feature optional und abhängig von Browser/OS.
+    }
+  }
+  if (registration.sync?.register) {
+    try {
+      await registration.sync.register("birthday-fallback-check");
+    } catch {
+      // Kann je nach Browser blockiert sein.
+    }
+  }
+}
+
 function hydrateNotificationState() {
   hydrateNotificationTime();
   updateNotificationStatus();
@@ -97,6 +128,7 @@ function hydrateNotificationState() {
     scheduleReminderCheck();
     maybeSendDailyBirthdayNotifications();
     scheduleBackgroundBirthdayNotifications();
+    syncNotificationConfigToServiceWorker();
   }
 }
 function hydrateNotificationTime() {
@@ -116,6 +148,7 @@ function handleNotificationTimeChange() {
     scheduleReminderCheck();
     maybeSendDailyBirthdayNotifications();
     scheduleBackgroundBirthdayNotifications();
+    syncNotificationConfigToServiceWorker();
   }
 }
 function notificationTriggerTime() {
@@ -358,12 +391,14 @@ function saveEntry() {
   resetForm();
   renderEntriesList();
   render();
+  syncNotificationConfigToServiceWorker();
 }
 function deleteEntry(id) {
   state.entries = state.entries.filter((entry) => entry.id !== id);
   persistEntries();
   renderEntriesList();
   render();
+  syncNotificationConfigToServiceWorker();
 }
 function openWishModal(entry) {
   const wish = generateWish(entry);
@@ -616,6 +651,7 @@ function persistEntries() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
   if (isNotificationEnabled()) {
     scheduleBackgroundBirthdayNotifications();
+    syncNotificationConfigToServiceWorker();
   }
 }
 function loadEntries() {
@@ -674,6 +710,7 @@ async function enableBirthdayNotifications() {
   maybeSendDailyBirthdayNotifications();
   scheduleReminderCheck();
   scheduleBackgroundBirthdayNotifications();
+  syncNotificationConfigToServiceWorker();
 }
 function isNotificationEnabled() {
   return localStorage.getItem(NOTIFY_PREF_KEY) === "enabled" && Notification.permission === "granted";
@@ -697,7 +734,7 @@ function updateNotificationStatus() {
 }
 async function scheduleBackgroundBirthdayNotifications() {
   if (!isNotificationEnabled()) return;
-  if (!("serviceWorker" in navigator) || !("TimestampTrigger" in window)) return;
+  if (!("serviceWorker" in navigator) || !("TimestampTrigger" in globalThis)) return;
   const registration = state.swRegistration || (await navigator.serviceWorker.ready.catch(() => null));
   if (!registration?.showNotification) return;
   const trigger = notificationTriggerTime();
@@ -718,7 +755,7 @@ async function scheduleBackgroundBirthdayNotifications() {
           body: `${entry.personName} wird ${age}. Öffne die App für den Glückwunschtext.`,
           tag: `birthday-reminder-${entry.id}-${triggerAt.getFullYear()}`,
           renotify: false,
-          showTrigger: new TimestampTrigger(triggerAt.getTime()),
+          showTrigger: new globalThis.TimestampTrigger(triggerAt.getTime()),
           data: { entryId: entry.id },
         });
       } catch {

@@ -1,0 +1,19 @@
+{
+  "name": "Gratulations Geburtstagskalender",
+  "short_name": "Gratulations",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6ff",
+  "theme_color": "#3f51b5",
+  "description": "Geburtstage verwalten und rechtzeitig Push-Erinnerungen erhalten.",
+  "lang": "de-DE",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
